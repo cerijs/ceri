@@ -59,7 +59,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "props", ->
       el = null
-      before ->
+      before (done) ->
         el = makeEl merge 
           props: 
             someString: String
@@ -68,6 +68,7 @@ test module.exports, (merge) ->
             withDefault:
               type: String
               default: "defaultvalue"
+        el.$nextTick done
       after -> el.remove()
       it "should set observedAttributes", ->
         oa = el.__proto__.constructor.observedAttributes

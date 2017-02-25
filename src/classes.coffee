@@ -25,7 +25,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "classes", ->
       el = null
-      before ->
+      before (done) ->
         el = makeEl merge 
           mixins: [
             require("./structure")
@@ -45,6 +45,7 @@ test module.exports, (merge) ->
               prop: "class2"
             someDiv:
               data: -> someData2Class: true
+        el.$nextTick done
       after -> el.remove()
           
       it "should work", ->

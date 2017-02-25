@@ -36,7 +36,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "styles", ->
       el = null
-      before ->
+      before (done) ->
         el = makeEl merge 
           mixins: [
             require("./structure")
@@ -56,6 +56,7 @@ test module.exports, (merge) ->
               prop: "style2"
             someDiv:
               data: -> height: "20px"
+        el.$nextTick done
       after -> el.remove()
       it "should work", ->
         el.style2 = "position: absolute"

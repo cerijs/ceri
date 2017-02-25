@@ -53,8 +53,9 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "svg", ->
       el = null
-      before ->
+      before (done) ->
         el = makeEl merge structure: template 1, """<svg></svg>"""
+        el.$nextTick done
       after -> el.remove()
       it "should have svg element", ->
         el.should.contain "svg"

@@ -27,14 +27,16 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "#if", ->
       el = null
-      before -> el = makeEl merge
-        structure: template(1,"""
-          <div #if="isVisible" class=c1></div>
-          <div #if="isVisible2" class=c2></div>
-          """)
-        data: ->
-          isVisible: true
-          isVisible2: false
+      before (done) -> 
+        el = makeEl merge
+          structure: template(1,"""
+            <div #if="isVisible" class=c1></div>
+            <div #if="isVisible2" class=c2></div>
+            """)
+          data: ->
+            isVisible: true
+            isVisible2: false
+        el.$nextTick done
       after -> el.remove()
       it "should work", ->
         el.should.contain "div.c1"

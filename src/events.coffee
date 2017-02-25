@@ -26,10 +26,11 @@ test module.exports, (merge) ->
     describe "events", ->
       el = null
       spy = chai.spy()
-      before ->
+      before (done) ->
         el = makeEl merge 
           events:
             someEvent: (e) -> spy(e.detail)
+        el.$nextTick done
       after -> el.remove()
       it "should work", ->
         el.$emit "someEvent","test"
