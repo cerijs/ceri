@@ -1,0 +1,65 @@
+{
+  "name": "ceri",
+  "description": "Custom Elements enRIched",
+  "version": "0.0.0",
+  "homepage": "https://github.com/cerijs/",
+  "author": {
+    "name": "Paul Pflugradt",
+    "email": "paul.pflugradt@gmail.com"
+  },
+  "license": "MIT",
+  "main": "lib/ceri.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cerijs/ceri"
+  },
+  "files": [
+    "lib/*.js"
+  ],
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "javascript-detect-element-resize": "^0.5.3",
+    "lodash.throttle": "^4.1.1"
+  },
+  "devDependencies": {
+    "acorn": "^4.0.11",
+    "chai": "^3.5.0",
+    "chai-spies": "^0.7.1",
+    "chokidar": "^1.6.1",
+    "coffee-loader": "^0.7.2",
+    "coffee-script": "^1.12.3",
+    "document-register-element": "^1.3.0",
+    "karma": "^1.4.1",
+    "karma-chai": "^0.1.0",
+    "karma-chai-dom": "^1.1.0",
+    "karma-chai-spies": "^0.1.4",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-firefox-launcher": "^1.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-webpack": "^2.0.2",
+    "lodash": "^4.17.4",
+    "mocha": "^3.2.0",
+    "rimraf": "^2.5.4",
+    "script-runner": "^0.1.6",
+    "webpack": "^2.2.1"
+  },
+  "keywords": [],
+  "readmeFilename": "README.md",
+  "scripts": {
+    "prebuild": "rimraf lib/*",
+    "build": "run-npm build:*",
+    "build:coffee": "coffee --no-header --compile --output lib/ src/*.coffee",
+    "build:removeTests": "coffee ./bundleBuilder.coffee",
+    "build:ceri": "ceri-compiler --out lib/ lib/*",
+    "watch": "run-npm -p watch:*",
+    "watch:coffee": "coffee --no-header --watch --output lib/ src/*.coffee",
+    "watch:removeTests": "coffee ./bundleBuilder.coffee --watch",
+    "watch:karma": "karma start --browsers Chromium --auto-watch",
+    "test": "karma start --single-run",
+    "preversion": "npm test && npm run build",
+    "version": "git add .",
+    "postversion": "git push && git push --tags && npm publish"
+  }
+}
