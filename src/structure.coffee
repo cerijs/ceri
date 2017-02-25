@@ -87,7 +87,7 @@ module.exports =
   created: ->
     @_slots = {}
   connectedCallback: ->
-    if @_isFirstConnect
+    if @_isFirstConnect and @structure?
       @_deferredStructure = []
       structure = arrayize(@structure())
       for child in @children

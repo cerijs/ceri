@@ -127,12 +127,12 @@ Name | Links| Short description
 ### List of directives
 Name | Links| Short description
 ---: | ---| -------
-[#ref](##ref) | [doc](##ref) [src](src/#structure.coffee) | saves the element on your instance
-[#text, :text](##text--:text) | [doc](##text--:text) [src](src/#structure.coffee) | sets the textContent of the element
-[#if](##if) | [doc](##if) [src](src/#if.coffee) | toggle element
+[#ref](#ref) | [doc](#ref) [src](src/#structure.coffee) | saves the element on your instance
+[#text, :text](#text-text) | [doc](#text-text) [src](src/#structure.coffee) | sets the textContent of the element
+[#if](#if) | [doc](#if) [src](src/#if.coffee) | toggle element
 
 ### Template attributes
-Used with structure mixins and template compiler of `ceri-compiler` or `ceri-loader`.
+Used with structure mixins and template compiler of [ceri-compiler](https://github.com/cerijs/ceri-compiler) or [ceri-loader](https://github.com/cerijs/ceri-loader).
 ```html
 <!-- as expected -->
 <div attr="value"></div> 

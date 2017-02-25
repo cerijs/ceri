@@ -19,10 +19,7 @@
   "engines": {
     "node": "*"
   },
-  "dependencies": {
-    "javascript-detect-element-resize": "^0.5.3",
-    "lodash.throttle": "^4.1.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "acorn": "^4.0.11",
     "chai": "^3.5.0",
@@ -43,7 +40,9 @@
     "mocha": "^3.2.0",
     "rimraf": "^2.5.4",
     "script-runner": "^0.1.6",
-    "webpack": "^2.2.1"
+    "webpack": "^2.2.1",
+    "ceri-compiler": "^1.0.0",
+    "ceri-loader": "^1.0.0"
   },
   "keywords": [],
   "readmeFilename": "README.md",
