@@ -65,10 +65,11 @@ npm install --save-dev ceri
 ```
 ### Usage
 ```coffee
-# main file of your component
-ceri = require "ceri"
-module.exports = ceri class ComponentName extends HTMLElement
-  mixins:[
+# the wrapper creates a ES5 class (prototype chain) and calls ceri on it
+ceri = require "ceri/lib/wrapper"
+# the component
+module.exports = ceri
+  mixins: [
     require "ceri/lib/watch"
     require "ceri/lib/structure"
   ]
@@ -83,28 +84,16 @@ module.exports = ceri class ComponentName extends HTMLElement
 ```
 ### Guideline for building a component
 
-- Required style should be managed in `style` attributes
+- Required style for features should be managed in `style` attributes
 - Optional style should be delivered in one or multiple "theme" css files alongside your component
-- Use a mixin only if it helps to reduce complexity in your usecase. They don't come for free
-- HTMLElement has alot of properties, try to not conflict with them
+- Use a mixin only if it helps to reduce complexity in your use-case. They don't come for free
+- HTMLElement has a lot of properties, try to not conflict with them
 
 ### Reactions
 All official [reactions](https://developers.google.com/web/fundamentals/getting-started/primers/customelements#reactions) of all mixins will be merged into your component, with exception of `constructor`.
 
 For setup code use `created` instead.
-All `created` callbacks will be called infront of the first `connectedCallback`.
-This can be problematic if you want to manipulate the component after creation, but before inserting.
-
-Alternatively you can call all `created` callbacks manualy in your constructor:
-
-```coffee
-ceri class SomeClass extends HTMLElement
-  constructor: ->
-    super()
-    @_created = true # so they wont get called again
-    for fn in @_c2Cb
-      fn.call(@)
-```
+All `created` callbacks will be called in the constructor
 
 ### List of mixins
 Name | Links| Short description
@@ -130,6 +119,7 @@ Name | Links| Short description
 [#ref](#ref) | [doc](#ref) [src](src/#structure.coffee) | saves the element on your instance
 [#text, :text](#text-text) | [doc](#text-text) [src](src/#structure.coffee) | sets the textContent of the element
 [#if](#if) | [doc](#if) [src](src/#if.coffee) | toggle element
+[#show](#show) | [doc](#show) [src](src/#show.coffee) | toggle visibility of an element
 
 ### Template attributes
 Used with structure mixins and template compiler of [ceri-compiler](https://github.com/cerijs/ceri-compiler) or [ceri-loader](https://github.com/cerijs/ceri-loader).
@@ -399,9 +389,16 @@ toggle an element
 mixins: [ require("ceri/lib/#if") ]
 # usage with structure and watch
 structure: template 1, """<div #if=visible></div>"""
-data: ->
-  visible: true
+data: -> visible: true
+```
 
+#### #show
+toggle visibility of an element
+```coffee
+mixins: [ require("ceri/lib/#show") ]
+# usage with structure and watch
+structure: template 1, """<div #show=visible></div>"""
+data: -> visible: true
 ```
 
 
