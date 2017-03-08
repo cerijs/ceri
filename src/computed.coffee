@@ -46,7 +46,7 @@ module.exports =
               @$watch.processNewValue(o)
               window.__ceriDeps = tmp
               # managing cyclic dependecies
-              if o.oldValue != o.value
+              if !isObject(o.value) and o.oldValue != o.value
                 for c in o.cDeps
                   if not c.dirty and o.deps[c.id]?
                     c.notify()
@@ -66,7 +66,7 @@ module.exports =
             else # search for descendand deps
               @$nextTick ->
                 for k in Object.keys(@$watch.__w)
-                  if k.indexOf(o.path) > -1
+                  if k.indexOf(o.path) > -1 and k != o.path
                     o.parent[o.name]
                     break
           if @$computed.__deferredInits and not o.noWait
@@ -134,7 +134,7 @@ test module.exports, (merge) ->
         el.someData = "test4"
         el.someData4.should.equal "test4test4"
       it "should work with cyclic dependecies", ->
-        el.someData6.should.equal 2
-        el.someData5.should.equal 2
+        el.someData6.should.equal 1
+        el.someData5.should.equal 1
         el.someData6.should.equal 2
       after -> el.remove()

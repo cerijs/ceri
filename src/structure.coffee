@@ -7,6 +7,7 @@ module.exports =
     require("./_merger").copy(source: "_elLookup")
     require("./_merger").copy(source: "_attrLookup")
     ]
+  _rebind: "$structure"
   mixins: [
     require "./path"
     require("./watch")
@@ -16,15 +17,20 @@ module.exports =
     text: 
       ":": (el, val) -> @$watch.path path: val, cbs: (val) -> el.textContent = val
       "#": (el, val) -> el.textContent = val
+
     ref: 
       "#": (el, val) -> @[val] = el
 
   methods:
+    "$structure":
+      beforeInsert: []
+      afterInsert: []
     el: (name, options, children) ->
       if @_elLookup?[name]?
         el = @_elLookup[name].call(@, name)
       else
         el = document.createElement(name)
+
       if options?
         for name, types of options
           lookupObj = @_attrLookup[name]
@@ -45,22 +51,21 @@ module.exports =
               when ":"
                 @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
               when "@"
-                @__deferredStructure.push ((el, name, value, mods) ->
-                  {value} = @$path.toValue(path: value) if isString(value)
-                  if mods?
-                    capture = mods.capture
-                    fn = (e) ->
-                      return if mods.self and e.target != el
-                      return if mods.notPrevented and e.defaultPrevented
-                      value.apply @, arguments
-                      e.preventDefault() if mods.prevent
-                      e.stopPropagation() if mods.stop
-                      el.removeEventListener name,fn if mods.once
-                  else
-                    fn = value
-                  fn = fn.bind(@)
-                  el.addEventListener name, fn, capture
-                  ).bind(@, el, name, value, mods)
+                {value} = @$path.toValue(path: value) if isString(value)
+                if mods?
+                  capture = mods.capture
+                  fn = (e) ->
+                    return if mods.self and e.target != el
+                    return if mods.notPrevented and e.defaultPrevented
+                    value.apply @, arguments
+                    e.preventDefault() if mods.prevent
+                    e.stopPropagation() if mods.stop
+                    el.removeEventListener name,fn if mods.once
+                else
+                  capture = null
+                  fn = value
+                fn = fn.bind(@)
+                el.addEventListener name, fn, capture
               when "~"
                 unless @[name]?
                   @[name] = =>
@@ -73,7 +78,6 @@ module.exports =
                 @[name]._cbs.push cb
               else
                 el.setAttribute name, value
-          
       if children?
         for child in children
           if isString(child)
@@ -85,8 +89,9 @@ module.exports =
     @_slots = {}
   connectedCallback: ->
     if @_isFirstConnect and @structure?
-      @__deferredStructure = []
       structure = arrayize(@structure())
+      for fn in @$structure.beforeInsert
+        fn.call(@, structure)
       for child in @children
         slot = child.getAttribute "slot"
         if slot?
@@ -98,7 +103,7 @@ module.exports =
           @_slots[el] = @
         else
           @appendChild(el)
-      for fn in @__deferredStructure
+      for fn in @$structure.afterInsert
         fn.call(@)
 
 test module.exports, (merge) ->

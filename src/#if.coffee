@@ -7,20 +7,21 @@ module.exports =
   ]
   _attrLookup:
     if: 
-      "#": (el, path) ->
-        comment = document.createComment("#if")
-        parent = null
-        @__deferredStructure.push ->
-          parent = el.parentNode
-          {value} = @$path.toValue path: path
-          unless value
-            parent.replaceChild comment, el
-        @$watch.path path:path, initial: false, cbs: (value) ->
-          if value
-            parent.replaceChild el, comment
-          else
-            parent.replaceChild comment, el
-
+      "#": (el, path, mods) ->
+        @$structure.beforeInsert.push (structure) ->
+          comment = document.createComment("#if")
+          parent = el.parentNode || @
+          if parent == @
+            {value} = @$path.toValue path:path
+            unless value
+              index = structure.indexOf(el)
+              structure[index] = comment
+          @$watch.path path:path, cbs: (value, oldVal) ->
+            if value != oldVal
+              if value and comment.parentNode == parent
+                parent.replaceChild el, comment
+              else if !value and el.parentNode == parent
+                parent.replaceChild comment, el
 
 
 test module.exports, (merge) ->

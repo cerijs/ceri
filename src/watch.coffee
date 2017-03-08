@@ -127,7 +127,8 @@ module.exports =
           for cb in o.cbs
             obj.cbs.push cb
           if o.value?
-            o.parent[o.name] = o.value
+            if o.parent[o.name] != o.value
+              o.parent[o.name] = o.value
           else if o.initial
             val = o.parent[o.name]
             for cb in o.cbs
