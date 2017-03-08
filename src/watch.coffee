@@ -79,7 +79,9 @@ module.exports =
             o.id = getID()
             o.notify = (val, oldVal) ->
               for cb in o.cbs
-                cb(val, oldVal)
+                try
+                  cb(val, oldVal)
+              return
             getter = ->
               if window.__ceriDeps? and not window.__ceriDeps[o.id]?
                 o.cbs.push window.__ceriDeps(o.id).notify
