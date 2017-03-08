@@ -45,14 +45,19 @@ test module.exports, (merge) ->
               prop: "class2"
             someDiv:
               data: -> someData2Class: true
-        el.$nextTick done
+        el.$nextTick -> el.$nextTick done
       after -> el.remove()
           
-      it "should work", ->
-        el.class2 = "somePropClass"
-        el.should.have.attr "class", "somePropClass someClass someDataClass"
-        el.classes.this.someDataClass = false
-        el.should.have.attr "class", "somePropClass someClass"
+      it "should work", (done) ->
+        el.should.have.attr "class", "someClass someDataClass"
         el.someDiv.should.have.attr "class", "someData2Class"
+        el.class2 = "somePropClass"
+        el.$nextTick ->
+          el.should.have.attr "class", "somePropClass someClass someDataClass"
+          el.$nextTick ->
+            el.classes.this.someDataClass = false
+            el.should.have.attr "class", "somePropClass someClass"
+            done()
+        
       after ->
         el.remove()

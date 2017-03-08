@@ -134,7 +134,7 @@ test module.exports, (merge) ->
         el.someData = "test4"
         el.someData4.should.equal "test4test4"
       it "should work with cyclic dependecies", ->
-        el.someData6.should.equal 1
-        el.someData5.should.equal 1
+        el.someData6.should.equal 2
+        el.someData5.should.equal 2
         el.someData6.should.equal 2
       after -> el.remove()

@@ -56,9 +56,13 @@ test module.exports, (merge) ->
               prop: "style2"
             someDiv:
               data: -> height: "20px"
-        el.$nextTick done
+        el.$nextTick -> el.$nextTick done
       after -> el.remove()
-      it "should work", ->
-        el.style2 = "position: absolute"
-        el.styles.this.height = "20px"
-        el.should.have.attr "style", "width: 10px; height: 20px; position: absolute;"
+      it "should work", (done) ->
+        el.should.have.attr "style", "width: 10px; height: 10px;"
+        el.someDiv.should.have.attr "style", "height: 20px;"
+        el.$nextTick ->
+          el.style2 = "position: absolute"
+          el.styles.this.height = "20px"
+          el.should.have.attr "style", "width: 10px; height: 20px; position: absolute;"
+          done()
