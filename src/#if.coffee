@@ -17,11 +17,10 @@ module.exports =
               index = structure.indexOf(el)
               structure[index] = comment
           @$watch.path path:path, cbs: (value, oldVal) ->
-            if value != oldVal
-              if value and comment.parentNode == parent
-                parent.replaceChild el, comment
-              else if !value and el.parentNode == parent
-                parent.replaceChild comment, el
+            if value and comment.parentNode == parent
+              parent.replaceChild el, comment
+            else if !value and el.parentNode == parent
+              parent.replaceChild comment, el
 
 
 test module.exports, (merge) ->

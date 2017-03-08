@@ -11,12 +11,11 @@ module.exports =
       "#": (el, path, mods) ->
         @$style.set el, visibility: "hidden"
         @$watch.path path:path, cbs: (value, oldVal) ->
-          if value != oldVal
-            style = visibility: if value then null else "hidden"
-            if value and mods?.delay
-              @$nextTick -> @$style.set el, style
-            else
-              @$style.set el, style
+          style = visibility: if value then null else "hidden"
+          if value and mods?.delay
+            @$nextTick -> @$style.set el, style
+          else
+            @$style.set el, style
 
 
 test module.exports, (merge) ->
