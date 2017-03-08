@@ -13,7 +13,7 @@ module.exports =
   ]
   created: ->
     if process.env.NODE_ENV == "test"
-      @tests?(@)
+      @$nextTick -> @tests?(@)
 
 test module.exports, (merge) ->
   describe "ceri", ->

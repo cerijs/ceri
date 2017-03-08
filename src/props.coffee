@@ -43,13 +43,14 @@ module.exports =
       @$watch.path parent: @, name: name, path: name, initial: false, value: @[name], cbs: [@$setAttribute.bind(@,@,hyphenate(k))]
   connectedCallback: ->
     if @_isFirstConnect
-      for k,v of @props
-        if v.default?
-          if v.name
-            name = v.name
-          else
-            name = k
-          @[name] ?= v.default
+      @$nextTick ->
+        for k,v of @props
+          if v.default?
+            if v.name
+              name = v.name
+            else
+              name = k
+            @[name] ?= v.default
         
 
 test module.exports, (merge) ->
@@ -87,6 +88,8 @@ test module.exports, (merge) ->
           el.someNumber.should.equal 2
           done()
       it "should work with boolean", (done) ->
+        el.someBoolean.should.be.false
+        el.should.not.have.attr "some-boolean"
         el.someBoolean = true
         el.should.have.attr "some-boolean"
         el.removeAttribute "some-boolean"
