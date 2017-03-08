@@ -61,4 +61,4 @@ test module.exports, (merge) ->
       it "should work", ->
         el.style2 = "position: absolute"
         el.styles.this.height = "20px"
-        el.should.have.attr "style", "height: 20px; width: 10px; position: absolute;"
+        el.should.have.attr "style", "width: 10px; height: 20px; position: absolute;"

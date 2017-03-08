@@ -10,7 +10,7 @@ module.exports =
       "#": (el, path) ->
         comment = document.createComment("#if")
         parent = null
-        @_deferredStructure.push ->
+        @__deferredStructure.push ->
           parent = el.parentNode
           {value} = @$path.toValue path: path
           unless value

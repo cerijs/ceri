@@ -46,7 +46,7 @@ module.exports =
   _v: 1
   _elLookup: lookup
   mixins: [
-    require "./structure.coffee"
+    require "./structure"
   ]
 
 test module.exports, (merge) ->

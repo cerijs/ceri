@@ -1,9 +1,4 @@
-{isElement,isString,arrayize} = require("./_helpers")
-getByAlias = (obj, alias) ->
-  for a in alias
-    if obj[a]
-      return obj[a]
-  return null
+{isElement,isString,arrayize,camelize} = require("./_helpers")
 module.exports =
   _name: "structure"
   _v: 1
@@ -15,6 +10,7 @@ module.exports =
   mixins: [
     require "./path"
     require("./watch")
+    require("./$setAttribute")
   ]
   _attrLookup:
     text: 
@@ -36,19 +32,20 @@ module.exports =
             if value.mods?
               mods = value.mods
               value = value.val
+              if mods.camel
+                name = camelize(name)
             if lookupObj?
               if lookupObj[type]?
                 lookupObj[type].call @, el, value, mods
                 continue
-              else
-                cwarn("true", type, name," found, but not expected")
+              cwarn(!lookupObj[type]?, type, name," found, but not expected")
             switch type 
               when "$"
                 @$watch.path path: value, cbs: ((el,name,val) -> el[name] = val).bind(@,el,name)
               when ":"
-                @$watch.path path: value, cbs: ((el,name,val) -> el.setAttribute name, val).bind(@,el,name)
+                @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
               when "@"
-                @_deferredStructure.push ((el, name, value, mods) ->
+                @__deferredStructure.push ((el, name, value, mods) ->
                   {value} = @$path.toValue(path: value) if isString(value)
                   if mods?
                     capture = mods.capture
@@ -88,7 +85,7 @@ module.exports =
     @_slots = {}
   connectedCallback: ->
     if @_isFirstConnect and @structure?
-      @_deferredStructure = []
+      @__deferredStructure = []
       structure = arrayize(@structure())
       for child in @children
         slot = child.getAttribute "slot"
@@ -97,8 +94,11 @@ module.exports =
         else
           @_slots.default?.appendChild(child)
       for el in structure
-        @appendChild(el)
-      for fn in @_deferredStructure
+        if isString(el)
+          @_slots[el] = @
+        else
+          @appendChild(el)
+      for fn in @__deferredStructure
         fn.call(@)
 
 test module.exports, (merge) ->

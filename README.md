@@ -14,7 +14,7 @@ The aim of CeriJS is to make development and maintenance of custom elements v1 a
 - not limited to help only in "common" use cases
 - tooling for building, testing and publishing
 
-[I want to use a component build with ceri](#i-want-to-use-a-component-build-with-ceri)
+[I want to use a component built with ceri](#i-want-to-use-a-component-built-with-ceri)
 
 [I want to build a component with ceri](#i-want-to-build-a-component-with-ceri)
 
@@ -27,7 +27,7 @@ Within a single project this is no problem, but as soon as you have several proj
 
 So as a rule of thumb: use ceri if you plan to use your component across projects, if it is a project specific one use the framework of the project and keep it homogenous.
 
-## I want to use a component build with ceri
+## I want to use a component built with ceri
 
 You have to install and use the lightweight custom-element polyfill:
 ```sh

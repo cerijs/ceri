@@ -12,48 +12,45 @@ module.exports =
         unless arr.indexOf(hyphenated) > -1
           arr.push hyphenated
       Object.defineProperty obj, "observedAttributes", value: arr
-  _rebind: "$props"
   mixins: [
     require("./watch")
-  ]
-  methods:
-    $props:
-      parse: (name, val) ->
-        return unless (prop = @props?[name])?
-        if prop.type == Number and val?
-          return Number(val)
-        else if prop.type == Boolean
-          return val?
-        return val
-      setAttribute: (name, val) ->
-        hyphenated = hyphenate(name)
-        switch @props[name].type
-          when String,Number then @setAttribute(hyphenated,val)
-          when Boolean
-            if val
-              @setAttribute(hyphenated,"")
-            else
-              @removeAttribute(hyphenated)
+    require("./$setAttribute")
+  ]     
   attributeChangedCallback: (name, oldVal, newVal) ->
     camelized = camelize(name)
-    if (val = @$props.parse(camelized,newVal))?
-      camelized = @props[camelized].name if @props[camelized].name?
-      if @[camelized] != val
-        @[camelized] = val
+    return unless (prop = @props[camelized])?
+    if prop.type == Number and newVal?
+      val = Number(newVal)
+    else if prop.type == Boolean
+      val = newVal?
+    else
+      val = newVal
+    camelized = prop.name if prop.name?
+    if @[camelized] != val
+      @[camelized] = val
   created: ->
+    @props ?= {}
     for k,v of @props
       unless v.type?
         @props[k] = type: v
         v = @props[k]
+      if v.type == Boolean and not v.default?
+        v.default = false
+      if v.name
+        name = v.name
+      else
+        name = k
+      @$watch.path parent: @, name: name, path: name, initial: false, value: @[name], cbs: [@$setAttribute.bind(@,@,hyphenate(k))]
   connectedCallback: ->
     if @_isFirstConnect
       for k,v of @props
-        if v.name
-          name = v.name
-        else
-          name = k
-        @[name] ?= v.default
-        @$watch.init parent: @, name: name, path: name, value: @[name], initial: false, cbs: [@$props.setAttribute.bind(@,k)]
+        if v.default?
+          if v.name
+            name = v.name
+          else
+            name = k
+          @[name] ?= v.default
+        
 
 test module.exports, (merge) ->
   describe "ceri", ->

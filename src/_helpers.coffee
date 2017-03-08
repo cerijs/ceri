@@ -1,11 +1,14 @@
 isArray = Array.isArray
 h = /([^-])([A-Z])/g
+id = 0
 module.exports =
+  getID: -> return id++
   noop: ->
+  identity: (val) -> return val
   arrayize: (obj) ->
     if isArray(obj)
       return obj
-    else if !obj
+    else unless obj?
       return []
     else
       return [obj]
@@ -21,7 +24,11 @@ module.exports =
   camelize: (str) -> str.replace /-(\w)/g, (_, c) -> if c then c.toUpperCase() else ''
   capitalize: (str) -> str.charAt(0).toUpperCase() + str.slice(1)
   hyphenate: (str) -> str.replace(h, '$1-$2').toLowerCase()
-
+  clone: (o) ->
+    cln = {}
+    for own k,v of o
+      cln[k] = v
+    return cln
 test {_name:"_helpers"}, ->
   describe "ceri", ->
     describe "_helpers", ->

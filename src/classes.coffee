@@ -7,18 +7,18 @@ module.exports =
     require("./class")
     require("./combined")
   ]
-  connectedCallback: ->
-    if @_isFirstConnect
-      @$combined
-        path: "classes"
-        value: @classes
-        parseProp: @$class.strToObj
-        cbFactory: (name) ->
-          if name == "this"
-            el = @
-          else
-            el = @[name] 
-          return [(val) -> @$class.set el, val]
+  created: ->
+    @$combined
+      path: "classes"
+      value: @classes
+      parseProp: @$class.strToObj
+      cbFactory: (name) ->
+        if name == "this"
+          el = @
+        else
+          el = @[name]
+        return [(val) ->
+          @$class.set el, val]
 
 
 test module.exports, (merge) ->
@@ -50,7 +50,7 @@ test module.exports, (merge) ->
           
       it "should work", ->
         el.class2 = "somePropClass"
-        el.should.have.attr "class", "somePropClass someDataClass someClass"
+        el.should.have.attr "class", "somePropClass someClass someDataClass"
         el.classes.this.someDataClass = false
         el.should.have.attr "class", "somePropClass someClass"
         el.someDiv.should.have.attr "class", "someData2Class"

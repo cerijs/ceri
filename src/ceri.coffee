@@ -49,10 +49,12 @@ module.exports = (ce) ->
     addReactionMerger "destroy","_deCb"
     mergers.push source:"created", setup: (obj) ->
       obj._crCb = [->
+        @_isCeri = true
         @_isFirstConnect = true
+        proto = Object.getPrototypeOf(@)
         for key in @_rebind
-          o1 = Object.getPrototypeOf(@)[key]
-          cerror("!isObject(o1)","_rebind must target object: ", key)
+          o1 = proto[key]
+          cerror(!isObject(o1),"_rebind must target object: ", key)
           o2 = {}
           Object.defineProperty @, key, __proto__:null, value: o2 
           for k,v of o1
@@ -74,6 +76,7 @@ module.exports = (ce) ->
 
     ## apply merging
     _merger.apply(ce,ceProto.mixins,mergers)
+  return ce
 
 test {_name:"ceri"}, (merge) ->
   describe "ceri", ->
