@@ -63,6 +63,16 @@ or use it in your markup
 <ceri-component></ceri-component>
 ```
 
+The native customElements implementation depends on ES6 classes, this requires some setup of webpack when using the UglifyJSPlugin:
+```sh
+npm install --save-dev uglifyjs-webpack-plugin git://github.com/mishoo/UglifyJS2#harmony
+```
+then use it in your webpack.config
+```coffee
+UglifyJSPlugin = require("uglifyjs-webpack-plugin")
+plugins: [new UglifyJSPlugin()]
+```
+
 ## I want to build a component with ceri
 
 
