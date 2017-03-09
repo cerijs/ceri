@@ -30,7 +30,7 @@ So as a rule of thumb: use ceri if you plan to use your component across project
 ## I want to use a component built with ceri
 
 Custom elements aren't widely adopted, yet.
-So you have to use the lightweight custom-element polyfill:
+So you have to use the lightweight [custom-element polyfill](https://github.com/WebReflection/document-register-element):
 ```sh
 npm install --save-dev document-register-element
 ```
