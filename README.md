@@ -29,17 +29,29 @@ So as a rule of thumb: use ceri if you plan to use your component across project
 
 ## I want to use a component built with ceri
 
-You have to install and use the lightweight custom-element polyfill:
+Custom elements aren't widely adopted, yet.
+So you have to use the lightweight custom-element polyfill:
 ```sh
 npm install --save-dev document-register-element
 ```
 then call it somewhere in your app
 ```js
-require("document-register-element/pony")(global,"force")
-// force is required for now, as native custom elements requires 
-// ES6 classes which are not widely supported 
+// always load the polyfill
+require("document-register-element")
+
+// load the polyfill only when needed - with the help of webpack
+function polyfillCE() {
+  require.ensure([], require => {
+    require("document-register-element")
+    startupApp() // your startup code depending on window.customElements
+  },"cePoly")
+}
+if !window.customElements
+  polyfillCE()
+else
+  startupApp() // your startup code depending on window.customElements
 ```
-Afterwards you can register a component easily:
+To register a component:
 ```js
 // the name should contain at least one hyphen
 window.customElements.define("ceri-component", require("ceri-component"))
