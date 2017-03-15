@@ -11,7 +11,7 @@ module.exports =
   mixins: [
     require "./path"
     require("./watch")
-    require("./$setAttribute")
+    require("./setAttribute")
   ]
   _attrLookup:
     text: 
@@ -51,16 +51,23 @@ module.exports =
               when ":"
                 @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
               when "@"
-                {value} = @$path.toValue(path: value) if isString(value)
+                path = value
+                {value} = @$path.toValue(path: path) if isString(value)
                 if mods?
+                  console.log mods
+                  if mods.toggle
+                    value = ((path) -> 
+                      o = @$path.toNameAndParent(path:path)
+                      return -> o.parent[o.name] = !o.parent[o.name]).call(@,path)
                   capture = mods.capture
-                  fn = (e) ->
+                  fn = ((cb) -> (e) ->
                     return if mods.self and e.target != el
                     return if mods.notPrevented and e.defaultPrevented
-                    value.apply @, arguments
+                    cb.apply @, arguments
                     e.preventDefault() if mods.prevent
                     e.stopPropagation() if mods.stop
                     el.removeEventListener name,fn if mods.once
+                  ).call(@,value)
                 else
                   capture = null
                   fn = value
@@ -93,11 +100,12 @@ module.exports =
       for fn in @$structure.beforeInsert
         fn.call(@, structure)
       for child in @children
-        slot = child.getAttribute "slot"
-        if slot?
-          @_slots[slot]?.appendChild(slot)
-        else
-          @_slots.default?.appendChild(child)
+        if child?
+          slot = child.getAttribute "slot"
+          if slot?
+            @_slots[slot]?.appendChild(slot)
+          else
+            @_slots.default?.appendChild(child)
       for el in structure
         if isString(el)
           @_slots[el] = @

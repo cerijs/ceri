@@ -21,7 +21,10 @@ replaceExpression = (js, expr, cb) ->
 changing = {}
 compile = (file) ->
   unless changing[file]
-    outFile = path.resolve(lib, path.basename(file,".coffee"))+".js"
+    folder = path.dirname(file).replace(src,lib)
+    try
+      fs.mkdirSync(folder)
+    outFile = path.resolve(folder, path.basename(file,".coffee"))+".js"
     changing[file] = true
     setTimeout (-> changing[file] = false), 1000
     fs.readFile file, 'utf8', (err, sourceCoffee) ->
@@ -45,6 +48,15 @@ if process.argv[2] == "--watch"
   .on "add", compile
   .on "change", compile
 else
-  fs.readdir src, (err, files) ->
-    throw err if err?
-    files.forEach (file) -> compile(path.resolve(src,file))
+  processDir = (dir) ->
+    fs.readdir dir, (err, entries) ->
+      throw err if err?
+      entries.forEach (entry) -> 
+        name = path.resolve(dir,entry)
+        fs.lstat name, (err, stats) ->
+          throw err if err?
+          if stats.isDirectory()
+            processDir(name)
+          else if stats.isFile()
+            compile(name)
+  processDir(src)

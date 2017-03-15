@@ -14,7 +14,7 @@ module.exports =
       Object.defineProperty obj, "observedAttributes", value: arr
   mixins: [
     require("./watch")
-    require("./$setAttribute")
+    require("./setAttribute")
   ]     
   attributeChangedCallback: (name, oldVal, newVal) ->
     camelized = camelize(name)
