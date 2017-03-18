@@ -103,14 +103,16 @@ module.exports =
         unless (w = @__overlayWatcher)?
           @__overlayWatcher = @$computed.orWatch @overlay.active, (val) ->
             if val
-              @__overlay = @$overlay()
+              @__overlay = @$overlay() unless @__overlay
             else
               @__overlay?.close?()
+              @__overlay = null
         else
           if w.parent[w.name]
-            @__overlay = @$overlay()
+            @__overlay = @$overlay()  unless @__overlay
       else
         @__overlay = @$overlay()
   disconnectedCallback: ->
     @__overlay?.close?()
+    @__overlay = null
     
