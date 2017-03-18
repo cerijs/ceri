@@ -1,5 +1,6 @@
-{noop, isObject, isFunction, clone, getID} = require("./_helpers")
+{noop, isString, isObject, isFunction, clone, getID} = require("./_helpers")
 window.__ceriDeps = null
+id = 0
 module.exports =
   _name: "computed"
   _prio: 900
@@ -13,10 +14,15 @@ module.exports =
     $computed:
       __deferredInits: []
       init: (o) ->
+        unless o.path # create anonymous computed value
+          o.id = getID()
+          o.path = "__computed."+o.id
+          o.parent = @__computed
+          o.name = o.id
         @$watch.parse(o)
         o = @$watch.init(o) 
         if o # needs setup
-          o.id = getID()
+          o.id ?= getID()
           o.deps = (id) ->
             o.deps[id] = true
             return o
@@ -79,8 +85,13 @@ module.exports =
           return o.notify
         cwarn true, "couldn't get notify cb for computed ", o.path
         return noop
-
+      orWatch: (val, cbs) ->
+        if isString(val)
+          @$watch.path path:val, cbs: cbs
+        else
+          @$computed.init get: val, cbs: cbs
   created: ->
+    @__computed = {} # to hold all anonymous computed values
     for k,v of @computed
       if isObject(v)
         v = clone(v)

@@ -23,9 +23,7 @@ module.exports =
     open: (val) ->
       unless @isOpen?
         if val
-          @__noAnimation = true
-          @toggle()
-          @__noAnimation = false
+          @toggle(false)
       else
         if val != @isOpen
           @toggle()
@@ -34,7 +32,9 @@ module.exports =
       @__parentElement = @parentElement
       @__placeholder = document.createComment("#open")
       @__parentElement.replaceChild @__placeholder, @
-
+  disconnectedCallback: ->
+    if @open
+      @toggle(false)
 test module.exports, (merge) ->
   describe "ceri", ->
     describe "open", ->

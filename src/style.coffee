@@ -1,5 +1,5 @@
 prefixes = ["Webkit", "Moz", "ms"]
-{camelize, capitalize} = require "./_helpers"
+{camelize, capitalize, isArray} = require "./_helpers"
 
 module.exports =
   _name: "style"
@@ -23,7 +23,10 @@ module.exports =
         return tmp
       setNormalized: (el, obj) ->
         for k,v of obj
-          el.style[k] = v
+          if isArray(v) and v[0]?
+            el.style[k] = v.join("")
+          else
+            el.style[k] = v
       set: (el, obj) ->
         unless obj?
           obj = el

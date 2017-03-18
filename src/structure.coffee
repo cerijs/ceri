@@ -9,9 +9,9 @@ module.exports =
     ]
   _rebind: "$structure"
   mixins: [
-    require "./path"
     require("./watch")
     require("./setAttribute")
+    require "./events"
   ]
   _attrLookup:
     text: 
@@ -51,28 +51,14 @@ module.exports =
               when ":"
                 @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
               when "@"
-                path = value
-                {value} = @$path.toValue(path: path) if isString(value)
-                if mods?
-                  console.log mods
-                  if mods.toggle
-                    value = ((path) -> 
-                      o = @$path.toNameAndParent(path:path)
-                      return -> o.parent[o.name] = !o.parent[o.name]).call(@,path)
-                  capture = mods.capture
-                  fn = ((cb) -> (e) ->
-                    return if mods.self and e.target != el
-                    return if mods.notPrevented and e.defaultPrevented
-                    cb.apply @, arguments
-                    e.preventDefault() if mods.prevent
-                    e.stopPropagation() if mods.stop
-                    el.removeEventListener name,fn if mods.once
-                  ).call(@,value)
+                mods ?= {}
+                if mods.toggle
+                  mods.toggle = value
                 else
-                  capture = null
-                  fn = value
-                fn = fn.bind(@)
-                el.addEventListener name, fn, capture
+                  mods.cbs = [value]
+                mods.event ?= name
+                mods.el ?= el
+                @$on mods
               when "~"
                 unless @[name]?
                   @[name] = =>

@@ -55,13 +55,13 @@ module.exports =
         return newO
     $animate: (o) ->
       o.done = o.done.bind(@) if o.done?
-      return o.done?() if @__noAnimation
+      return o.done?() if o.animate == false
       if o.style
+        cb = step(o)
         o.el ?= @
         o.duration ?= 300
-        o.delay ?= 0
         o.easing ?= @$ease "in","linear"
-        o.next = requestAnimationFrame.bind(null,step(o))
+        o.next = requestAnimationFrame.bind(null,cb)
         o.preserve = o._preserve if o._percent and o._preserve?
         if o._style?
           for key, val of o._style
@@ -69,7 +69,10 @@ module.exports =
             if tmp.length == 3
               tmp.push(tmp.shift())
             o.style[key] = tmp
-        setTimeout o.next, o.delay
+        if o.delay
+          setTimeout o.next, o.delay
+        else
+          cb(performance.now())
         @$animations.push o
         o.stop = (obj) =>
           unless o.stopped
@@ -82,8 +85,10 @@ module.exports =
                   for key, val of o.preserve
                     s[key] = val
               else
+                percent = Math.min(1,(performance.now() - o.start) / o.duration)
                 obj._preserve = o.preserve
-                obj._percent = 1 - Math.min(1,(performance.now() - o.start) / o.duration)
+                obj._percent = 1 - percent
+                obj._value = o.easing(percent)
                 obj._style = o.style
           return obj
       return o
