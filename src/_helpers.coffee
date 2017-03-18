@@ -4,6 +4,19 @@ id = 0
 module.exports =
   getID: -> return id++
   noop: ->
+  assign: Object.assign or (target, sources...) ->
+    target = Object(target)
+    if sources?
+      for source in sources
+        for own k,v of source
+          target[k] = v
+    return target
+  merge: (target, sources...) ->
+    target = Object(target)
+    if sources?
+      for source in sources
+        for own k,v of source
+          target[k] ?= v
   identity: (val) -> return val
   arrayize: (obj) ->
     if isArray(obj)

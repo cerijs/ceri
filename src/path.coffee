@@ -1,3 +1,4 @@
+{isString} = require("./_helpers")
 splittedToObjects = (splitted, obj) ->
 
   return splitted.reduce ((arr, name, i) ->
@@ -19,6 +20,12 @@ module.exports =
             o.obj ?= @
             o.value = splittedToObjects(o.path.split("."), o.obj).pop()
         return o
+      getValue: (path) -> @$path.toValue(path:path).value
+      resolveValue: (val) ->
+        if isString(val)
+          return @$path.getValue(val)
+        else
+          return val
       setValue: (o) ->
         if o.value?
           @$path.toNameAndParent(o)

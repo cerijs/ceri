@@ -4,7 +4,7 @@ module.exports =
   _v: 1
   _prio: 900
   _mergers: [
-    require("./_merger").copy source: "events"
+    require("./_merger").concat source: "events"
     require("./_merger").copy(source: "_evLookup")
     ]
   mixins: [
@@ -27,7 +27,9 @@ module.exports =
       else
         if o.toggle
           obj = @$path.toNameAndParent(path:o.toggle)
-          cb = -> obj.parent[obj.name] = !obj.parent[obj.name]
+          cb = ->
+            console.log "toggle #{obj.name}" 
+            obj.parent[obj.name] = !obj.parent[obj.name]
         else
           cb = (e) ->
             return if o.self and e.target != o.el
@@ -76,19 +78,20 @@ module.exports =
   connectedCallback: ->
     if @_isFirstConnect
       @__eventsToDestroy = []
-      for k,v of @events
-        if v.cbs?
-          o = clone(v)
-          o.event = k
-          @$on o
-        else if (isString(v) or isFunction(v) or isArray(v))
-          @$on cbs:v, event: k
-        else
-          for el,v2 of v
-            o = clone(v2)
-            o.el ?= el
+      for events in @events
+        for k,v of events
+          if v.cbs?
+            o = clone(v)
             o.event = k
             @$on o
+          else if (isString(v) or isFunction(v) or isArray(v))
+            @$on cbs:v, event: k
+          else
+            for el,v2 of v
+              o = clone(v2)
+              o.el ?= el
+              o.event = k
+              @$on o
 
         
   destroy: ->

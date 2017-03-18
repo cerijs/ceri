@@ -21,7 +21,8 @@ module.exports =
           o.name = o.id
         @$watch.parse(o)
         o = @$watch.init(o) 
-        if o # needs setup
+        unless o.__init__ # needs setup
+          o.__init__ = true
           o.id ?= getID()
           o.deps = (id) ->
             o.deps[id] = true
@@ -79,6 +80,7 @@ module.exports =
             @$computed.__deferredInits.push deferred
           else
             deferred.call(@)
+        return o
       getNotifyCb: (o) ->
         cwarn !o.path?, "getNotifyCb requires a path"
         if (o = @$watch.getObj(o))? and o.notify?
@@ -87,9 +89,9 @@ module.exports =
         return noop
       orWatch: (val, cbs) ->
         if isString(val)
-          @$watch.path path:val, cbs: cbs
+          return @$watch.path path:val, cbs: cbs
         else
-          @$computed.init get: val, cbs: cbs
+          return @$computed.init get: val, cbs: cbs
   created: ->
     @__computed = {} # to hold all anonymous computed values
     for k,v of @computed

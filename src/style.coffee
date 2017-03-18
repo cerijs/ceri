@@ -5,6 +5,7 @@ module.exports =
   _name: "style"
   _v: 1
   _rebind: "$style"
+  _prio: 700
   methods:
     $style:
       normalize: (prop) ->
@@ -32,6 +33,10 @@ module.exports =
           obj = el
           el = @
         @$style.setNormalized(el,@$style.normalizeObj(obj))
+  connectedCallback: ->
+    if @_isFirstConnect and @initStyle?
+      @$style.set @, @initStyle
+
 
 test module.exports, (merge) ->
   describe "ceri", ->

@@ -75,12 +75,12 @@ module.exports =
             @$watch.setObj(o) 
         else # can be appended
           o = @$watch.init(o)
-          if o # needs setup
+          unless o.__init__ # needs setup
+            o.__init__ = true
             o.id = getID()
             o.notify = (val, oldVal) ->
               for cb in o.cbs
-                try
-                  cb(val, oldVal)
+                cb(val, oldVal)
               return
             getter = ->
               if window.__ceriDeps? and not window.__ceriDeps[o.id]?
@@ -108,6 +108,7 @@ module.exports =
             
             # triggering cbs
             o.parent[o.name] = initVal if o.initial
+        return o
             
       parse: (obj,shouldClone) ->
         unless isObject(obj)
@@ -135,15 +136,14 @@ module.exports =
             val = o.parent[o.name]
             for cb in o.cbs
               cb(val)
+          return obj
         else # not initialized yet
-          o.__init__ = true
           if obj # but object already saved
             o.cbs = obj.cbs.concat(o.cbs)
           w = @$watch.parse(@watch[o.path],true)
           o.cbs = o.cbs.concat(w.cbs)
           @$watch.setObj(o)
           return o
-        return false
         
 
   created: ->
