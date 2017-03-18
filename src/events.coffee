@@ -1,4 +1,4 @@
-{isString,isArray,arrayize,noop,clone} = require("./_helpers")
+{isString,isFunction,isArray,arrayize,noop,clone} = require("./_helpers")
 module.exports =
   _name: "events"
   _v: 1
@@ -81,7 +81,7 @@ module.exports =
           o = clone(v)
           o.event = k
           @$on o
-        else if (isString(v) or isArray(v))
+        else if (isString(v) or isFunction(v) or isArray(v))
           @$on cbs:v, event: k
         else
           for el,v2 of v
