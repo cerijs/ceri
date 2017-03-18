@@ -18,7 +18,7 @@ module.exports =
           document.body.appendChild @
         else
           @__parentElement.replaceChild @, @__placeholder
-      @toggleAnimate = animate != false
+      @toggleAnimate = animate = animate != false
       @opening = true
       @openingOrOpen = true
       @closing = false
@@ -38,7 +38,7 @@ module.exports =
 
     hide: (animate) ->
       return if @closing or not @isOpen
-      @toggleAnimate = animate != false
+      @toggleAnimate = animate = animate != false
       @closing = true
       @openingOrOpen = false
       @beforeHide?(animate)

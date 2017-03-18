@@ -91,7 +91,7 @@ module.exports =
                 obj._value = o.easing(percent)
                 obj._style = o.style
           return obj
-        o.toEnd = -> o.start = Number.MIN_VALUE unless o.stopped
+        o.toEnd = -> o.start = -1e9 unless o.stopped
       return o
     $ease: (type, name, param) ->
       fn = easing[name](param)
