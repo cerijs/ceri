@@ -6,6 +6,7 @@ module.exports =
   _v: 1
   _rebind: "$style"
   _prio: 700
+  _mergers: require("./_merger").copy(source: "initStyle")
   methods:
     $style:
       normalize: (prop) ->

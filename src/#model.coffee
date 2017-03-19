@@ -11,10 +11,12 @@ module.exports =
         event = switch el.type
           when "checkbox","radio","select-one","select-multiple" then "change"
           else "input"
+        o = @$path.toNameAndParent(path:path)
         el.addEventListener event, (e) =>
-          @$path.setValue(path:path,value:e.target.value)
-        @$watch.path path:path, cbs: (value, oldVal) ->
-          if oldVal != value
+          if o.parent[o.name] != e.target.value
+            o.parent[o.name] = e.target.value
+        @$watch.path path:path, cbs: (value) ->
+          if el.value != value
             el.value = value
 
 

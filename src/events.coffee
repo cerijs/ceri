@@ -28,7 +28,6 @@ module.exports =
         if o.toggle
           obj = @$path.toNameAndParent(path:o.toggle)
           cb = ->
-            console.log "toggle #{obj.name}" 
             obj.parent[obj.name] = !obj.parent[obj.name]
         else
           cb = (e) ->

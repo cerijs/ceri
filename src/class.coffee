@@ -1,7 +1,9 @@
+{isString} = require("./_helpers")
 module.exports =
   _name: "class"
   _v: 1
   _rebind: "$class"
+  _mergers: require("./_merger").copy(source: "initClass")
   methods:
     $class:
       strToObj: (str) ->
@@ -22,7 +24,16 @@ module.exports =
           obj = el
           el = @
         @$class.setStr(el,@$class.objToStr(obj))
-
+  connectedCallback: ->
+    if @_isFirstConnect and @initClass?
+      if isString(@initClass)
+        @$class.setStr @, @initClass
+      else
+        for k,v of @initClass
+          if k == "this"
+            @$class.setStr @, v
+          else
+            @$class.setStr @[k], v
 test module.exports, (merge) ->
   describe "ceri", ->
     describe "class", ->

@@ -40,6 +40,8 @@ module.exports =
               value = value.val
               if mods.camel
                 name = camelize(name)
+            else
+              mods = {}
             if lookupObj?
               if lookupObj[type]?
                 lookupObj[type].call @, el, value, mods
@@ -51,7 +53,6 @@ module.exports =
               when ":"
                 @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
               when "@"
-                mods ?= {}
                 if mods.toggle
                   mods.toggle = value
                 else
