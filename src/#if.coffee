@@ -25,8 +25,9 @@ module.exports =
               index = structure.indexOf(o.el)
               structure[index] = comment
           @$structure.afterInsert.push cb
-        else
+        else 
           cwarn true, "#if: no parent found for element: " + o.el
+          return null
             
 
 
