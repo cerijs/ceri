@@ -25,7 +25,7 @@ The aim of CeriJS is to make development and maintenance of custom elements v1 a
 Lets face it, the API of your framework of love will change - if its vue, react or angular.
 Within a single project this is no problem, but as soon as you have several projects with sharing code, maintenance caused by API change can get tedious.
 
-So as a rule of thumb: use ceri if you plan to use your component across projects, if it is a project specific one use the framework of the project and keep it homogenous.
+So as a rule of thumb: use ceri if you plan to use your component across projects, if it is project specific, use the framework of the project and keep it homogenous.
 
 ## I want to use a component built with ceri
 
@@ -75,6 +75,7 @@ plugins: [new UglifyJSPlugin()]
 
 ## I want to build a component with ceri
 
+- ATTENTION: ALL API IS STILL IN BETA AND CAN CHANGE ANYTIME
 
 ### Getting started
 
@@ -87,7 +88,7 @@ npm install --save-dev ceri
 ```
 ### Usage
 ```coffee
-# the wrapper creates a ES5 class (prototype chain) and calls ceri on it
+# the wrapper creates a ES6 or ES5 class, depending if the polyfill is loaded, and calls ceri on it
 ceri = require "ceri/lib/wrapper"
 # the component
 module.exports = ceri
