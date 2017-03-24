@@ -3,21 +3,22 @@ module.exports =
   _name: "#model"
   _v: 1
   mixins: [
-    require("./structure")
+    require("./directives")
   ]
   _attrLookup:
     model: 
-      "#": (el, path, mods) ->
-        event = switch el.type
+      "#": (o) ->
+        event = switch o.el.type
           when "checkbox","radio","select-one","select-multiple" then "change"
           else "input"
-        o = @$path.toNameAndParent(path:path)
-        el.addEventListener event, (e) =>
+        o.path = o.value
+        @$path.toNameAndParent(o)
+        o.el.addEventListener event, (e) =>
           if o.parent[o.name] != e.target.value
             o.parent[o.name] = e.target.value
-        @$watch.path path:path, cbs: (value) ->
-          if el.value != value
-            el.value = value
+        @$watch.path path:o.value, cbs: (value) ->
+          if o.el.value != value
+            o.el.value = value
 
 
 test module.exports, (merge) ->
@@ -26,6 +27,7 @@ test module.exports, (merge) ->
       el = null
       before (done) -> 
         el = makeEl merge
+          mixins: [ require("./structure") ]
           structure: template(1,"""
             <input #model="value" #ref=input></input>
             <select #model="value" #ref=select></select>

@@ -26,6 +26,9 @@ module.exports =
           return @$path.getValue(val)
         else
           return val
+      resolveMultiple: (o, arr) ->
+        for str in arr
+          o[str] = @$path.resolveValue(o[str]) if o[str]
       setValue: (o) ->
         if o.value?
           @$path.toNameAndParent(o)

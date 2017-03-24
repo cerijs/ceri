@@ -16,6 +16,7 @@ module.exports =
   mixins: [
     require("./style")
     require("./combined")
+    require "./parseElement"
   ]
   connectedCallback: ->
     if @_isFirstConnect
@@ -25,10 +26,7 @@ module.exports =
         parseProp: parseStyleString
         normalize: @$style.normalizeObj
         cbFactory: (name) ->
-          if name == "this"
-            el = @
-          else
-            el = @[name] 
+          el = @$parseElement.byString(name)
           return [(val) -> @$style.setNormalized el, val]
 
 

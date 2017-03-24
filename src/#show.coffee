@@ -3,19 +3,19 @@ module.exports =
   _name: "#show"
   _v: 1
   mixins: [
-    require("./structure")
+    require("./directives")
     require("./style")
   ]
   _attrLookup:
     show: 
-      "#": (el, path, mods) ->
-        @$style.set el, visibility: "hidden"
-        @$watch.path path:path, cbs: (value, oldVal) ->
+      "#": (o) ->
+        @$style.set o.el, visibility: "hidden"
+        @$watch.path path:o.value, cbs: (value, oldVal) ->
           style = visibility: if value then null else "hidden"
-          if value and mods?.delay
-            @$nextTick -> @$style.set el, style
+          if value and o.delay
+            @$nextTick -> @$style.set o.el, style
           else
-            @$style.set el, style
+            @$style.set o.el, style
 
 
 test module.exports, (merge) ->
@@ -24,6 +24,7 @@ test module.exports, (merge) ->
       el = null
       before (done) -> 
         el = makeEl merge
+          mixins: [ require("./structure") ]
           structure: template(1,"""
             <div #show="isVisible" #ref=d1 class=c1></div>
             <div #show="isVisible2" #ref=d2 class=c2></div>

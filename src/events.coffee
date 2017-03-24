@@ -1,37 +1,62 @@
 {isString,isFunction,isArray,arrayize,noop,clone} = require("./_helpers")
+rAF = requestAnimationFrame
+cAF = cancelAnimationFrame
+listener = (o,e) ->
+  cAF(o.lastRequest)
+  o.lastRequest = rAF ->
+    for cb in o.cbs
+      cb(e)
+throttled = (el, event, cb) ->
+  unless (o = el.__ceriEventListener?[event])?
+    el.__ceriEventListener ?= {}
+    o = el.__ceriEventListener[event] = {}
+    o.lastRequest = null
+    o.cbs = [cb]
+    o.listener = listener.bind(null,o)
+  else
+    o.cbs.push cb
+  if o.cbs.length == 1
+    el.addEventListener event, o.listener
+  return ->
+    if (i = o.cbs.indexOf(cb)) > -1
+      o.cbs.splice(i,1)
+      if o.cbs.length == 0
+        el.removeEventListener event, o.listener
 module.exports =
   _name: "events"
   _v: 1
-  _prio: 900
+  _prio: 700
   _mergers: [
     require("./_merger").concat source: "events"
-    require("./_merger").copy(source: "_evLookup")
+    require("./_merger").copy source: "_evLookup"
     ]
   mixins: [
     require "./computed"
+    require "./parseElement"
+    require "./parseActive"
   ]
   _evLookup: {}
   methods:
-    "$once": (o) ->
+    $once: (o) ->
       o.once = true
       return @$on(o)
-    "$on": (o) ->
-      o.el ?= @
+    $on: (o) ->
       cbs = []
       for fn in arrayize(o.cbs)
         fn = @[fn] if isString(fn)
         cbs.push fn
       o._cbs = cbs
       if @_evLookup[o.event]?
-        {adder,remover} = @_evLookup[o.event].call(@,o)
+        o = @_evLookup[o.event].call(@,o)
       else
         if o.toggle
+          o.toggle = o.value unless isString(o.toggle)
           obj = @$path.toNameAndParent(path:o.toggle)
           cb = ->
             obj.parent[obj.name] = !obj.parent[obj.name]
         else
-          cb = (e) ->
-            return if o.self and e.target != o.el
+          cb = (el, e) ->
+            return if o.self and e.target != el
             return if o.notPrevented and e.defaultPrevented
             return if o.keyCode and o.keyCode.indexOf(e.keyCode) == -1
             if o.outside
@@ -41,42 +66,27 @@ module.exports =
                   return
                 target = target.parentElement
             for ocb in o._cbs
-              ocb.apply @, arguments
+              ocb.call @, e
             e.preventDefault() if o.prevent
             e.stopPropagation() if o.stop
-            remover() if o.once
-        remover = noop
-        cb = cb.bind(@)
-        adder = ->
-          if isString(o.el) 
-            el = if o.el == "this" then @ else @[o.el] 
-          else 
-            el = o.el
-          el.addEventListener o.event, cb, o.capture
-          remover = ->
-            el.removeEventListener o.event, cb
-            remover = noop
-          @__eventsToDestroy.push remover if o.destroy
-          return
-      if o.active
-        @$computed.orWatch o.active, (val) ->
-          if val
-            if o.delay
-              @$nextTick adder
-            else
-              adder.call(@)
+            o.deactivate() if o.once
+        
+        o.activate = ->
+          el = @$parseElement.byString(o.el)
+          _cb = cb.bind(@,el)
+          if o.throttled
+            return o.deactivate = throttled(el, o.event, _cb)
           else
-            remover()
-      else
-        return adder.call(@)
-    "$emit": (o) ->
+            el.addEventListener o.event, _cb, o.capture
+            return o.deactivate = -> el.removeEventListener o.event, _cb
+      return @$parseActive(o)
+    $emit: (o) ->
       o.el ?= @
       evt = document.createEvent('CustomEvent')
       evt.initCustomEvent o.name, false, false, o.detail
       o.el.dispatchEvent evt
   connectedCallback: ->
     if @_isFirstConnect
-      @__eventsToDestroy = []
       for events in @events
         for k,v of events
           if v.cbs?
@@ -91,11 +101,6 @@ module.exports =
               o.el ?= el
               o.event = k
               @$on o
-
-        
-  destroy: ->
-    for cb in @__eventsToDestroy
-      cb()
 
 test module.exports, (merge) ->
   describe "ceri", ->

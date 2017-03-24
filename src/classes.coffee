@@ -12,13 +12,7 @@ module.exports =
       path: "classes"
       value: @classes
       parseProp: @$class.strToObj
-      cbFactory: (name) ->
-        if name == "this"
-          el = @
-        else
-          el = @[name]
-        return [(val) ->
-          @$class.set el, val]
+      cbFactory: (name) ->[(val) ->@$class.set name, val]
 
 
 test module.exports, (merge) ->

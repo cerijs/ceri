@@ -3,24 +3,31 @@ module.exports =
   _name: "#if"
   _v: 1
   mixins: [
-    require("./structure")
+    require "./directives"
   ]
   _attrLookup:
     if: 
-      "#": (el, path, mods) ->
-        @$structure.beforeInsert.push (structure) ->
-          comment = document.createComment("#if")
-          parent = el.parentNode || @
-          if parent == @
-            {value} = @$path.toValue path:path
+      "#": (o) ->
+        comment = document.createComment("#if")
+        parent = o.el.parentElement
+        cb = => @$computed.orWatch o.value, (value, oldVal) ->
+          if value and comment.parentElement == parent
+            parent.replaceChild o.el, comment
+          else if !value and o.el.parentElement == parent
+            parent.replaceChild comment, o.el
+        if parent
+          cb()
+        else if @$structure
+          @$structure.beforeInsert.push (structure) ->
+            parent = @
+            value = @$path.getValue o.value
             unless value
-              index = structure.indexOf(el)
+              index = structure.indexOf(o.el)
               structure[index] = comment
-          @$watch.path path:path, cbs: (value, oldVal) ->
-            if value and comment.parentNode == parent
-              parent.replaceChild el, comment
-            else if !value and el.parentNode == parent
-              parent.replaceChild comment, el
+          @$structure.afterInsert.push cb
+        else
+          cwarn true, "#if: no parent found for element: " + o.el
+            
 
 
 test module.exports, (merge) ->
@@ -29,6 +36,7 @@ test module.exports, (merge) ->
       el = null
       before (done) -> 
         el = makeEl merge
+          mixins: [ require("./structure") ]
           structure: template(1,"""
             <div #if="isVisible" class=c1></div>
             <div #if="isVisible2" class=c2></div>

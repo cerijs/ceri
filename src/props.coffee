@@ -1,4 +1,4 @@
-{arrayize,hyphenate,camelize} = require("./_helpers")
+{arrayize,hyphenate,camelize,clone} = require("./_helpers")
 module.exports =
   _name: "props"
   _v: 1
@@ -32,15 +32,19 @@ module.exports =
     @props ?= {}
     for k,v of @props
       unless v.type?
-        @props[k] = type: v
-        v = @props[k]
+        v = type: v, name: k
+        @props[k] = v
+      else
+        v.name ?= k
       if v.type == Boolean and not v.default?
         v.default = false
-      if v.name
-        name = v.name
-      else
-        name = k
-      @$watch.path parent: @, name: name, path: name, initial: false, value: @[name], cbs: [@$setAttribute.bind(@,@,hyphenate(k))]
+      o = clone(v)
+      o.parent = @
+      o.value = @[o.name]
+      o.cbs = arrayize(o.cbs).concat([@$setAttribute.bind(@,@,hyphenate(o.name))])
+      o.path ?= o.name
+      o.initial ?= false
+      @$watch.path o
   connectedCallback: ->
     if @_isFirstConnect
       @$nextTick ->

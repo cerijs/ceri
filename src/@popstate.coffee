@@ -10,11 +10,8 @@ module.exports =
   _v: 1
   _evLookup: 
     popstate: (o) ->
-      remover = noop
       o.this = @
-      adder = ->
+      o.activate = ->
         cbs.push o
-        remover = ->
-          cbs.splice cbs.indexOf(o), 1
-          remover = noop
-      return adder: adder, remover: remover
+        return -> cbs.splice cbs.indexOf(o), 1
+      return o

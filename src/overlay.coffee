@@ -62,12 +62,13 @@ module.exports =
     require("./animate")
     require("./getViewportSize")
     require("./path")
+    require("./parseActive")
   ]
 
   methods:
     $overlay: (o) ->
       o ?= clone(@overlay) || {}
-      open = ->
+      o.activate = ->
         for k,v of {zIndex: 995, opacity: 0.5, keepOpen: false, animate: true}
           if (val = o[k])?
             o[k] = @$path.resolveValue(val)
@@ -78,6 +79,7 @@ module.exports =
         stack.push o
         o.close = =>
           o.close = noop
+          return unless o.open
           o.open = false
           @$path.resolveValue(o.onClose)?.call(@)
           i = stack.indexOf o
@@ -90,29 +92,11 @@ module.exports =
         o.zIndex = Math.max o.zIndex, li.zIndex+5 if li?
         @$path.resolveValue(o.onOpen)?.call(@,o.zIndex)
         @$animate getAnimateObj(o, li, @getViewportSize)
-      if o.delay
-        @$nextTick open
-      else
-        open.call @
-      return o
+        return o.close
+      return @$parseActive(o)
 
 
   connectedCallback: ->
-    if @overlay
-      if @overlay.active
-        unless (w = @__overlayWatcher)?
-          @__overlayWatcher = @$computed.orWatch @overlay.active, (val) ->
-            if val
-              @__overlay = @$overlay() unless @__overlay
-            else
-              @__overlay?.close?()
-              @__overlay = null
-        else
-          if w.parent[w.name]
-            @__overlay = @$overlay()  unless @__overlay
-      else
-        @__overlay = @$overlay()
-  disconnectedCallback: ->
-    @__overlay?.close?()
-    @__overlay = null
+    if @_isFirstConnect and @overlay
+      @$overlay(clone(@overlay))
     

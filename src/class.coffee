@@ -4,6 +4,9 @@ module.exports =
   _v: 1
   _rebind: "$class"
   _mergers: require("./_merger").copy(source: "initClass")
+  mixins: [
+    require "./parseElement"
+  ]
   methods:
     $class:
       strToObj: (str) ->
@@ -17,8 +20,8 @@ module.exports =
         for k,v of obj
           result.push k if v
         return result.join " "
-      setStr: (el, str) -> 
-        el.className = str
+      setStr: (el, str) ->
+        @$parseElement.byString(el).className = str
       set: (el, obj) ->
         unless obj?
           obj = el
@@ -30,10 +33,7 @@ module.exports =
         @$class.setStr @, @initClass
       else
         for k,v of @initClass
-          if k == "this"
-            @$class.setStr @, v
-          else
-            @$class.setStr @[k], v
+          @$class.setStr k, v
 test module.exports, (merge) ->
   describe "ceri", ->
     describe "class", ->

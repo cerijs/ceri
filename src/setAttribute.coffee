@@ -10,7 +10,7 @@ module.exports =
         el = @
       if val? and val != false and (isString(val) or !isNaN(val))
         if val == true
-          el.setAttribute name,""
+          el.setAttribute name, ""
         else
           el.setAttribute name, val
       else

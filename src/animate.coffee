@@ -6,6 +6,23 @@ easing =
   exp: -> (percent) -> Math.exp(percent)
   circ: -> (percent) -> (1 - Math.sqrt(1 - Math.pow(percent,2)))
   back: (s = 1.70158) -> (percent) -> Math.pow(percent,2) * ((s + 1) * percent - s)
+processStyle = (style, aniStyle, fac, preserve) ->
+  transform = []
+  for key, val of aniStyle
+    if preserve? and preserve.indexOf(key) > -1
+      continue
+    tmp = val[0] + fac * (val[1] - val[0])
+    tmp += val[2] if val[2]
+    if style[key]?
+      style[key] = tmp
+    else
+      transform.push "#{key}(#{tmp})"
+  if transform.length > 0
+    style.transform = transform.join " "
+procesPreserve = (style, preserve) ->
+  if preserve
+    for key, val of preserve
+      style[key] = val
 step = (o) -> (timestamp) ->
   unless o.stopped
     s = o.el.style
@@ -29,36 +46,34 @@ step = (o) -> (timestamp) ->
       fac = o.easing percent
     else
       fac = 0
-    transform = []
-    for key, val of o.style
-      tmp = val[0] + fac * (val[1] - val[0])
-      tmp += val[2] if val[2]
-      if s[key]?
-        s[key] = tmp
-      else
-        transform.push "#{key}(#{tmp})"
-    if transform.length > 0
-      s.transform = transform.join " "
+    processStyle(s,o.style,fac)
     if fac != 1
       requestAnimationFrame o.next
     else
-      o.stop(reset: true)
+      o.stop?(reset: true)
       o.done?(o)
 module.exports =
   _name: "animate"
   _v: 1
   methods:
     $cancelAnimation: (o,newO = {}) ->
-      if o?
+      if o?.stop?
         return o.stop(newO)
       else
         return newO
     $animate: (o) ->
       o.done = o.done.bind(@) if o.done?
-      return o.done?() if o.animate == false
+      o.el ?= @
+      if o.animate == false
+        transform = []
+        s = o.el.style
+        if o.init
+          for key, val of o.init
+            s[key] = val
+        processStyle(s,o.style,1,o.preserve)
+        return o.done?() 
       if o.style
         cb = step(o)
-        o.el ?= @
         o.duration ?= 300
         o.easing ?= @$ease "in","linear"
         o.next = requestAnimationFrame.bind(null,cb)
@@ -69,21 +84,13 @@ module.exports =
             if tmp.length == 3
               tmp.push(tmp.shift())
             o.style[key] = tmp
-        if o.delay
-          setTimeout o.next, o.delay
-        else
-          cb(performance.now())
-        @$animations.push o
         o.stop = (obj) =>
           unless o.stopped
             o.stopped = true
             @$animations.splice @$animations.indexOf(o),1
             if obj?
               if obj.reset
-                if o.preserve
-                  s = o.el.style
-                  for key, val of o.preserve
-                    s[key] = val
+                procesPreserve(o.el.style,o.preserve)
               else
                 percent = Math.min(1,(performance.now() - o.start) / o.duration)
                 obj._preserve = o.preserve
@@ -92,6 +99,11 @@ module.exports =
                 obj._style = o.style
           return obj
         o.toEnd = -> o.start = -1e9 unless o.stopped
+        if o.delay
+          setTimeout o.next, o.delay
+        else
+          cb(performance.now())
+        @$animations.push o
       return o
     $ease: (type, name, param) ->
       fn = easing[name](param)

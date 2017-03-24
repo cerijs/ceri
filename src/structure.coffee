@@ -2,24 +2,14 @@
 module.exports =
   _name: "structure"
   _v: 1
-  _prio: 800
+  _prio: 900
   _mergers: [
     require("./_merger").copy(source: "_elLookup")
-    require("./_merger").copy(source: "_attrLookup")
     ]
   _rebind: "$structure"
   mixins: [
-    require("./watch")
-    require("./setAttribute")
-    require "./events"
+    require "./directives"
   ]
-  _attrLookup:
-    text: 
-      ":": (el, val) -> @$watch.path path: val, cbs: (val) -> el.textContent = val
-      "#": (el, val) -> el.textContent = val
-
-    ref: 
-      "#": (el, val) -> @[val] = el
 
   methods:
     "$structure":
@@ -30,48 +20,18 @@ module.exports =
         el = @_elLookup[name].call(@, name)
       else
         el = document.createElement(name)
-
       if options?
         for name, types of options
-          lookupObj = @_attrLookup[name]
           for type, value of types
             if value.mods?
-              mods = value.mods
-              value = value.val
-              if mods.camel
-                name = camelize(name)
+              o = value.mods
+              o.value = value.val
             else
-              mods = {}
-            if lookupObj?
-              if lookupObj[type]?
-                lookupObj[type].call @, el, value, mods
-                continue
-              cwarn(!lookupObj[type]?, type, name," found, but not expected")
-            switch type 
-              when "$"
-                @$watch.path path: value, cbs: ((el,name,val) -> el[name] = val).bind(@,el,name)
-              when ":"
-                @$watch.path path: value, cbs: @$setAttribute.bind(@,el,name)
-              when "@"
-                if mods.toggle
-                  mods.toggle = value
-                else
-                  mods.cbs = [value]
-                mods.event ?= name
-                mods.el ?= el
-                @$on mods
-              when "~"
-                unless @[name]?
-                  @[name] = =>
-                    for cb in @[name]._cbs
-                      cb.apply null, arguments
-                if mods?.event
-                  cb = ((el, value, e) -> el.dispatchEvent value, e).bind null, el, value
-                else
-                  cb = ((el, value, args...) -> el[value].apply null, args).bind null, el, value
-                @[name]._cbs.push cb
-              else
-                el.setAttribute name, value
+              o = value: value
+            o.el = el
+            o.type = type
+            o.name = if o.camel then camelize(name) else name
+            @$directive o
       if children?
         for child in children
           if isString(child)

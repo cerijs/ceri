@@ -1,8 +1,33 @@
 module.exports =
   _name: "open"
   _v: 1
+  mixins: [
+    require "./computed"
+    require "./events"
+    require "./@popstate"
+  ]
+  events:
+    popstate:
+      active: "openingOrOpen"
+      cbs: -> @hide(false)
+    click:
+      el: document.documentElement
+      outside: true
+      cbs: "hide"
+      active: -> @openingOrOpen and not @keepOpen
+      delay: true
+      destroy: true
+    keyup:
+      el:document.documentElement
+      notPrevented: true
+      destroy: true
+      keyCode: [27]
+      active: -> @openingOrOpen and not @keepOpen
+      cbs: "hide"
   props:
     open:
+      type: Boolean
+    keepOpen:
       type: Boolean
   data: ->
     isOpen: null
@@ -11,48 +36,57 @@ module.exports =
     openingOrOpen: false
     toggleAnimate: true
   methods:
-    show: (animate) ->
-      return if @openingOrOpen
+    attach: ->
       if not @parentElement 
         if @onBody
-          document.body.appendChild @
-        else
+          document.body.appendChild @ if @parentElement != document.body
+        else if @parentElement != @__parentElement
           @__parentElement.replaceChild @, @__placeholder
+    detach: ->
+      if @parentElement
+        if @onBody
+          @remove() if @parentElement == document.body
+        else if @parentElement == @__parentElement
+          @__parentElement.replaceChild @__placeholder, @
+    setOpen: ->
+      @closing = false
+      @opening = false
+      @isOpen = true
+      @open = true
+      @openingOrOpen = true
+      @$emit name:"toggle", detail:true
+      @onOpen?()
+    setClose: ->
+      @closing = false
+      @opening = false
+      @isOpen = false
+      @open = false
+      @openingOrOpen = false
+      @$emit name:"toggle", detail:false
+      @onClose?()
+    show: (animate) ->
+      return if @openingOrOpen
+      @attach()
       @toggleAnimate = animate = animate != false
       @opening = true
       @openingOrOpen = true
       @closing = false
-      @beforeShow?(animate)
-      done = ->
-        @opening = false
-        @isOpen = true
-        @open = true
-        @$emit name:"toggle", detail:true
-        @afterOpen?()
+      @onShow?(animate)
       if @$animate and @enter?
         @animation = @enter @$cancelAnimation @animation,
           animate: animate
-          done: done
+          done: @setOpen
       else
-        done.call(@)
-
+        @setOpen(@)
     hide: (animate) ->
       return if @closing or not @isOpen
       @toggleAnimate = animate = animate != false
       @closing = true
       @openingOrOpen = false
-      @beforeHide?(animate)
+      @onHide?(animate)
       done = ->
-        @isOpen = false
-        @open = false
-        if @parentElement
-          if @onBody
-            @remove()
-          else if @parentElement == @__parentElement
-            @__parentElement.replaceChild @__placeholder, @
-        @closing = false
-        @$emit name:"toggle", detail:false
-        @afterClose?()
+        @setClose()
+        @detach()
       if @$animate and @leave?
         @animation = @leave @$cancelAnimation @animation,
           animate: animate
