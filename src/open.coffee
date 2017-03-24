@@ -36,19 +36,19 @@ module.exports =
     openingOrOpen: false
     toggleAnimate: true
   methods:
-    attach: ->
+    _attach: ->
       if not @parentElement 
         if @onBody
           document.body.appendChild @ if @parentElement != document.body
         else if @parentElement != @__parentElement
           @__parentElement.replaceChild @, @__placeholder
-    detach: ->
+    _detach: ->
       if @parentElement
         if @onBody
           @remove() if @parentElement == document.body
         else if @parentElement == @__parentElement
           @__parentElement.replaceChild @__placeholder, @
-    setOpen: ->
+    _setOpen: ->
       @closing = false
       @opening = false
       @isOpen = true
@@ -56,7 +56,7 @@ module.exports =
       @openingOrOpen = true
       @$emit name:"toggle", detail:true
       @onOpen?()
-    setClose: ->
+    _setClose: ->
       @closing = false
       @opening = false
       @isOpen = false
@@ -66,7 +66,7 @@ module.exports =
       @onClose?()
     show: (animate) ->
       return if @openingOrOpen
-      @attach()
+      @_attach()
       @toggleAnimate = animate = animate != false
       @opening = true
       @openingOrOpen = true
@@ -75,7 +75,7 @@ module.exports =
       if @$animate and @enter?
         @animation = @enter @$cancelAnimation @animation,
           animate: animate
-          done: @setOpen
+          done: @_setOpen
       else
         @setOpen(@)
     hide: (animate) ->
@@ -85,8 +85,8 @@ module.exports =
       @openingOrOpen = false
       @onHide?(animate)
       done = ->
-        @setClose()
-        @detach()
+        @_setClose()
+        @_detach()
       if @$animate and @leave?
         @animation = @leave @$cancelAnimation @animation,
           animate: animate
