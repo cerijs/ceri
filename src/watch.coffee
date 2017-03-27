@@ -124,6 +124,7 @@ module.exports =
           obj.initial ?= true
           obj.__parsed__ = true
         return obj
+        
       init: (o) ->
         obj = @$watch.getObj(o)
         if obj?.__init__ # already initialized
@@ -140,8 +141,9 @@ module.exports =
         else # not initialized yet
           if obj # but object already saved
             o.cbs = obj.cbs.concat(o.cbs)
-          w = @$watch.parse(@watch[o.path],true)
-          o.cbs = o.cbs.concat(w.cbs)
+          if isObject(@watch)
+            w = @$watch.parse(@watch[o.path],true)
+            o.cbs = o.cbs.concat(w.cbs)
           @$watch.setObj(o)
           return o
         
