@@ -39,7 +39,7 @@ test module.exports, (merge) ->
               prop: "class2"
             someDiv:
               data: -> someData2Class: true
-        el.$nextTick -> el.$nextTick done
+        setTimeout done, 100
       after -> el.remove()
           
       it "should work", (done) ->

@@ -54,7 +54,7 @@ test module.exports, (merge) ->
               prop: "style2"
             someDiv:
               data: -> height: "20px"
-        el.$nextTick -> el.$nextTick done
+        setTimeout done, 100
       after -> el.remove()
       it "should work", (done) ->
         el.should.have.attr "style", "width: 10px; height: 10px;"
