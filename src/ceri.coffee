@@ -1,8 +1,9 @@
 # out ../../lib/ceri.js
 {isObject, isFunction, isArray} = require("./_helpers")
+
 module.exports = (ce) ->
   ceProto = ce.prototype
-  ceProto.$nextTick = (cb) -> setTimeout cb.bind(@), 0
+  ceProto.$nextTick = require("./_nextTick")
   if ceProto.mixins?
     ## flatten dependencies of mixins
     flattenMixins = (mixins) ->
