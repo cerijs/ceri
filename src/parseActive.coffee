@@ -1,14 +1,17 @@
 {noop} = require("./_helpers")
 module.exports =
   _name: "parseActive"
+  _prio: 10000
   _v: 1
   mixins: [
     require "./computed"
   ]
   methods:
     $parseActive: (o) ->
+      shouldActivate = false
       deactivate = noop
       activate = =>
+        return unless shouldActivate
         deactivate()
         _deactivate = o.activate.call(@)
         o.wasActivated = true
@@ -20,25 +23,22 @@ module.exports =
           _deactivate = noop
         @__activeToDestroy.push deactivate if o.destroy
         return deactivate
-      if o.active
-        @$computed.orWatch o.active, (val, oldVal) ->
-
-          if val != oldVal
-            if o._timeout?
-              clearTimeout(o._timeout)
-              o._timeout = null
-            if val
-              if o.delay
-                o._timeout = @$nextTick activate
-              else
-                activate()
-            else
-              deactivate()
-      else
+      activateWrapper = =>
+        shouldActivate = true
         if o.delay
           @$nextTick activate
         else
-          return activate()
+          activate()
+      if o.active
+        @$computed.orWatch o.active, (val, oldVal) ->
+          if val != oldVal
+            if val
+              activateWrapper()
+            else
+              shouldActivate = false
+              deactivate()
+      else
+        activateWrapper()
         
 
   connectedCallback: ->

@@ -10,17 +10,20 @@ module.exports = (parent, obj) ->
     cls = `class Ceri extends parent {
       constructor () {
         super()
-        this._crCb.forEach(cb => {
-          cb.call(this)
-        })
+        if (this._crCb) {
+          this._crCb.forEach(cb => {
+            cb.call(this)
+          })
+        }
         return this
       }
     }`
   catch e
     cls = obj.constructor = (self) ->
       self = parent.call(self or @)
-      for fn in self._crCb
-        fn.call(self)
+      if self._crCb
+        for fn in self._crCb
+          fn.call(self)
       return self
   cls.prototype = Object.create parent.prototype
   for k,v of obj

@@ -26,7 +26,7 @@ getAnimateObj = (o, li, getViewportSize) ->
   if li?
     li.animation?.stop?()
   else
-    li = opacity: 0, done: detach
+    li = opacity: 0, done: detach, allowScroll: true
     attach() if o.open
   if o.open
     duration = o.durationIn || 300
@@ -41,8 +41,9 @@ getAnimateObj = (o, li, getViewportSize) ->
     s.overflow = null
     s.marginRight = null
   else
-    s.overflow = "hidden"
     s.marginRight = getViewportSize().width - dEl.clientWidth + "px"
+    s.overflow = "hidden"
+    
   target.animation =
     animate: o.animate
     el: overlay

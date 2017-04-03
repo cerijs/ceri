@@ -16,6 +16,7 @@ start = (o, name, name2, e) ->
 getDelta = (s,e) -> x: e.clientX - s.x, y: e.clientY - s.y
 move = (o, e) ->
   e = e.changedTouches[0] if e.changedTouches?
+  o.secondMove = o.firstMove
   o.onFirstMove?.call(@, o, e) if o.firstMove
   o.onMove?.call(@, getDelta(o.start,e), o, e)
   o.firstMove = false
@@ -26,6 +27,7 @@ end = (o, e) ->
     o.onClick?.call(@,o)
   else
     o.onEnd?.call(@, getDelta(o.start,e), o)
+    o.onClick?.call(@,o) if o.secondMove
 
 
 
