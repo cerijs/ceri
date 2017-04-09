@@ -8,7 +8,7 @@ module.exports =
   ]
   events:
     popstate:
-      active: "openingOrOpen"
+      active: -> @onBody and @openingOrOpen
       cbs: -> @hide(false)
     click:
       el: document.documentElement
