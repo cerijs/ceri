@@ -10,20 +10,26 @@ module.exports =
       "#": (o) ->
         comment = document.createComment("#if")
         parent = o.el.parentElement
-        cb = => @$computed.orWatch o.value, (value, oldVal) ->
-          if value and comment.parentElement == parent
-            parent.replaceChild o.el, comment
-          else if !value and o.el.parentElement == parent
-            parent.replaceChild comment, o.el
+        cb = => 
+          parent ?= o.el.parentElement
+          @$computed.orWatch o.value, (value, oldVal) ->
+            console.log o.value + " " + value
+            console.log parent
+            console.log o.el.parentElement
+            if value and comment.parentElement == parent
+              parent.replaceChild o.el, comment
+            else if !value and o.el.parentElement == parent
+              parent.replaceChild comment, o.el
         if parent
           cb()
         else if @$structure
           @$structure.beforeInsert.push (structure) ->
-            parent = @
-            value = @$path.getValue o.value
-            unless value
-              index = structure.indexOf(o.el)
-              structure[index] = comment
+            index = structure.indexOf(o.el)
+            if index > -1
+              parent = @
+              value = @$path.getValue o.value
+              unless value
+                structure[index] = comment
           @$structure.afterInsert.push cb
         else 
           cwarn true, "#if: no parent found for element: " + o.el
