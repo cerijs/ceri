@@ -13,9 +13,6 @@ module.exports =
         cb = => 
           parent ?= o.el.parentElement
           @$computed.orWatch o.value, (value, oldVal) ->
-            console.log o.value + " " + value
-            console.log parent
-            console.log o.el.parentElement
             if value and comment.parentElement == parent
               parent.replaceChild o.el, comment
             else if !value and o.el.parentElement == parent
