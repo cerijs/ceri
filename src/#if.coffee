@@ -4,29 +4,29 @@ module.exports =
   _v: 1
   mixins: [
     require "./directives"
+    require "./if"
   ]
   _attrLookup:
     if: 
       "#": (o) ->
         comment = document.createComment("#if")
         parent = o.el.parentElement
-        cb = => 
-          parent ?= o.el.parentElement
-          @$computed.orWatch o.value, (value, oldVal) ->
-            if value and comment.parentElement == parent
-              parent.replaceChild o.el, comment
-            else if !value and o.el.parentElement == parent
-              parent.replaceChild comment, o.el
+        cb = => @$if value: o.value, anchor: comment, els: [o.el]
         if parent
+          parent.appendChild(comment)
           cb()
         else if @$structure
           @$structure.beforeInsert.push (structure) ->
             index = structure.indexOf(o.el)
             if index > -1
-              parent = @
               value = @$path.getValue o.value
               unless value
                 structure[index] = comment
+              else
+                structure.splice index, 0, comment
+            else
+              @$structure.afterInsert.push ->
+                o.el.parentElement.insertBefore comment, o.el.nextSibling
           @$structure.afterInsert.push cb
         else 
           cwarn true, "#if: no parent found for element: " + o.el

@@ -33,3 +33,7 @@ module.exports = (config) ->
       require("karma-chai-spies")
     ]
     browsers: ["Chromium","Firefox"]
+    client:
+      mocha:
+        {}
+        #grep: "with shared objs"

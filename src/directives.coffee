@@ -15,9 +15,8 @@ module.exports =
   ]
   _attrLookup:
     text: 
-      ":": (o) -> @$computed.orWatch o.value, (val) -> o.el.innerText = val
+      ":": (o) ->  @$computed.orWatch o.value, (val) -> o.el.innerText = val
       "#": (o) -> o.el.textContent = o.value
-
     ref: 
       "#": (o) -> @[o.value] = o.el
   methods:
@@ -27,7 +26,7 @@ module.exports =
       if (lookupObj = @_attrLookup[o.name])?
         if lookupObj[o.type]?
           return lookupObj[o.type].call @, o
-        cwarn(!lookupObj[o.type]?, o.type, o.name," found, but not expected")
+        #cwarn(!lookupObj[o.type]?, o.type, o.name," found, but not expected")
       switch o.type 
         when "$"
           cb = ((el,name,val) -> el[name] = val).bind(@,o.el,o.name)
@@ -38,7 +37,8 @@ module.exports =
         when "@"
           o.cbs ?= [o.value]
           o.event ?= o.name
-          @$on o
+          if o.event and o.cbs.length > 0
+            @$on o
         when "~"
           unless @[o.name]?
             @[o.name] = =>

@@ -7,21 +7,25 @@ module.exports =
   _rebind: "$style"
   _prio: 700
   _mergers: require("./_merger").copy(source: "initStyle")
+  _attrLookup:
+    style:
+      "#": (o) ->  @$computed.orWatch o.value, (val) -> @$style.set o.el, val
+
   methods:
     $style:
-      normalize: (prop) ->
+      normalize: (prop, el = @) ->
         prop = camelize(prop)
-        return prop if @style[prop]?
+        return prop if el.style[prop]?
         prop = capitalize(prop)
         for prefix in prefixes
           prefixed = prefix+prop
-          return prefixed if @style[prefixed]?
+          return prefixed if el.style[prefixed]?
         return null
-      normalizeObj: (obj) ->
+      normalizeObj: (obj,el) ->
         tmp = {}
         normalize = @$style.normalize
         for k,v of obj
-          tmp[normalize(k)] = v
+          tmp[normalize(k,el)] = v
         return tmp
       setNormalized: (el, obj) ->
         for k,v of obj
@@ -33,7 +37,7 @@ module.exports =
         unless obj?
           obj = el
           el = @
-        @$style.setNormalized(el,@$style.normalizeObj(obj))
+        @$style.setNormalized(el,@$style.normalizeObj(obj,el))
   connectedCallback: ->
     if @_isFirstConnect and @initStyle?
       @$style.set @, @initStyle

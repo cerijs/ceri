@@ -9,9 +9,9 @@ module.exports =
   _attrLookup:
     show: 
       "#": (o) ->
-        @$style.set o.el, visibility: "hidden"
-        @$watch.path path:o.value, cbs: (value, oldVal) ->
-          style = visibility: if value then null else "hidden"
+        @$style.set o.el, display: "none"
+        @$computed.orWatch o.value, (value, oldVal) ->
+          style = display: if value then null else "none"
           if value and o.delay
             @$nextTick -> @$style.set o.el, style
           else
@@ -35,9 +35,9 @@ test module.exports, (merge) ->
         el.$nextTick done
       after -> el.remove()
       it "should work", ->
-        el.d1.should.not.have.attr "style", "visibility: hidden;"
-        el.d2.should.have.attr "style", "visibility: hidden;"
+        el.d1.should.not.have.attr "style", "display: none;"
+        el.d2.should.have.attr "style", "display: none;"
         el.isVisible = false
         el.isVisible2 = true
-        el.d1.should.have.attr "style", "visibility: hidden;"
-        el.d2.should.not.have.attr "style", "visibility: hidden;"
+        el.d1.should.have.attr "style", "display: none;"
+        el.d2.should.not.have.attr "style", "display: none;"

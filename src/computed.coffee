@@ -1,4 +1,4 @@
-{noop, isString, isObject, isFunction, clone, getID} = require("./_helpers")
+{noop, isString, isArray, isObject, isFunction, clone, getID} = require("./_helpers")
 window.__ceriDeps = null
 id = 0
 module.exports =
@@ -12,7 +12,6 @@ module.exports =
   ]
   methods:
     $computed:
-      __deferredInits: []
       init: (o) ->
         unless o.path # create anonymous computed value
           o.id = getID()
@@ -24,49 +23,56 @@ module.exports =
         unless o.__init__ # needs setup
           o.__init__ = true
           o.id ?= getID()
+          o.isComputed = true
           o.deps = (id) ->
             o.deps[id] = true
             return o
           o.cDeps = []
+          o.instance = @
           o.notify = ->
             o.dirty = true
             if o.cbs.length > 0
               oldVal = o.value
               newVal = o.parent[o.name]
+              instance = o.instance
               for cb in o.cbs
-                cb(newVal, oldVal)
+                cb.call(instance, newVal, oldVal)
             for c in o.cDeps
               c.notify() unless c.dirty
+          o.notify.owner = o
           if o.set?
-            o.set = o.set.bind(@)
+            o.setter = o.set.bind(@)
           else
-            o.set = noop
+            o.setter = noop
           o.get = o.get.bind(@)
           o.oldValue = null
           o.getter = ->
             if o.dirty # get all watcher dependecies
               o.dirty = false
               tmp = window.__ceriDeps
+              tmp2 = window.__ceriActiveInstance
               window.__ceriDeps = o.deps
+              window.__ceriActiveInstance = @
               o.oldValue = o.value
               o.value = o.get()
-              @$watch.processNewValue(o)
+              @$watch.processNewValue(o,o.oldVal)
               window.__ceriDeps = tmp
+              window.__ceriActiveInstance = tmp2
               # managing cyclic dependecies
-              if !isObject(o.value) and o.oldValue != o.value
+              if !isObject(o.value) and !isArray(o.value) and o.oldValue != o.value
                 for c in o.cDeps
                   if not c.dirty and o.deps[c.id]?
                     c.notify()
 
             if window.__ceriDeps? and not window.__ceriDeps[o.id]?
-                o.cDeps.push window.__ceriDeps(o.id)
+              o.cDeps.push window.__ceriDeps(o.id)
             return o.value
           o.getter = o.getter.bind(@)
           deferred = ->
             o.dirty = true
             Object.defineProperty o.parent, o.name,
               get: o.getter
-              set: o.set
+              set: o.setter
             # next tick, so all computed values are setup
             if o.cbs.length > 0
               @$nextTick o.notify
@@ -92,17 +98,20 @@ module.exports =
           return @$watch.path path:val, cbs: cbs
         else
           return @$computed.init get: val, cbs: cbs
+      setup: (obj, parent = @) ->
+        for k,v of obj
+          if isObject(v)
+            v = clone(v)
+          else
+            v = {get: v} 
+          v.parent = parent
+          v.name = k
+          v.path = k
+          @$computed.init v
   created: ->
+    @$computed.__deferredInits = []
     @__computed = {} # to hold all anonymous computed values
-    for k,v of @computed
-      if isObject(v)
-        v = clone(v)
-      else
-        v = {get: v} 
-      v.parent = @
-      v.name = k
-      v.path = k
-      @$computed.init v
+    @$computed.setup(@computed)
   connectedCallback: -> @$nextTick ->
     arr = @$computed.__deferredInits
     @$computed.__deferredInits = false
@@ -124,6 +133,9 @@ test module.exports, (merge) ->
         if @someData5
           return 2
         return 1
+      someData7: -> @someData
+      someData8: -> @someData2 + @someData7
+      someData9: -> @someData3
     watch:
       someData: spy2
       someData2: spy
@@ -150,4 +162,14 @@ test module.exports, (merge) ->
         el.someData6.should.equal 1
         el.someData5.should.equal 1
         el.someData6.should.equal 2
+      it "should work with branched dependecies", ->
+        el.someData = "test5"
+        el.someData8.should.equal "test5test5"
+        el.someData = "test6"
+        el.someData8.should.equal "test6test6"
+      it "should work with deep dependencies", ->
+        el.someData = "test7"
+        el.someData9.should.equal "test7"
+        el.someData = "test8"
+        el.someData9.should.equal "test8"
       after -> el.remove()

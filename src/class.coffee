@@ -4,6 +4,9 @@ module.exports =
   _v: 1
   _rebind: "$class"
   _mergers: require("./_merger").copy(source: "initClass")
+  _attrLookup:
+    class:
+      "#": (o) ->  @$computed.orWatch o.value, (val) -> @$class.set o.el, val
   mixins: [
     require "./parseElement"
   ]

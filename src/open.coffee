@@ -79,7 +79,7 @@ module.exports =
       else
         @setOpen(@)
     hide: (animate) ->
-      return if @closing or not @isOpen
+      return if @closing or not @openingOrOpen
       @toggleAnimate = animate = animate != false
       @closing = true
       @openingOrOpen = false

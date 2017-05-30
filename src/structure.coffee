@@ -1,4 +1,4 @@
-{isElement,isString,arrayize,camelize} = require("./_helpers")
+{isElement,isString,isFunction,arrayize,camelize} = require("./_helpers")
 module.exports =
   _name: "structure"
   _v: 1
@@ -16,11 +16,11 @@ module.exports =
       beforeInsert: []
       afterInsert: []
     el: (name, options, children) ->
-      if @_elLookup?[name]?
-        el = @_elLookup[name].call(@, name)
+      if (cb = @_elLookup?[camelize(name)])?
+        el = cb.call(@, name, options, children)
       else
         el = document.createElement(name)
-      if options?
+      if options? and (not cb? or cb.length < 2)
         for name, types of options
           for type, value of types
             if value.mods?
@@ -32,7 +32,7 @@ module.exports =
             o.type = type
             o.name = if o.camel then camelize(name) else name
             @$directive o
-      if children?
+      if children? and not isFunction(children) and (not cb? or cb.length < 3)
         for child in children
           if isString(child)
             @_slots[child] = el
@@ -60,6 +60,7 @@ module.exports =
           @appendChild(el)
       for fn in @$structure.afterInsert
         fn.call(@)
+      @$structure = null
 
 test module.exports, (merge) ->
   describe "ceri", ->

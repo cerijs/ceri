@@ -1,4 +1,4 @@
-{noop} = require("./_helpers")
+{noop,isString} = require("./_helpers")
 module.exports =
   _name: "parseActive"
   _prio: 10000

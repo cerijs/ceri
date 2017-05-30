@@ -14,7 +14,7 @@ svgTags = [
   "desc"
   "ellipse"
   "filter"
-  "font-face"
+  "fontFace"
   "foreignObject"
   "g"
   "glyph"
@@ -22,7 +22,7 @@ svgTags = [
   "line"
   "marker"
   "mask"
-  "missing-glyph"
+  "missingGlyph"
   "path"
   "pattern"
   "polygon"
@@ -54,9 +54,9 @@ test module.exports, (merge) ->
     describe "svg", ->
       el = null
       before (done) ->
-        el = makeEl merge structure: template 1, """<svg></svg>"""
+        el = makeEl merge structure: template 1, """<svg test></svg>"""
         el.$nextTick done
       after -> el.remove()
       it "should have svg element", ->
-        el.should.contain "svg"
+        el.should.contain "svg[test]"
         el.children[0].namespaceURI.should.equal "http://www.w3.org/2000/svg"

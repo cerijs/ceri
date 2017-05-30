@@ -1,9 +1,13 @@
 # out ../../lib/ceri.js
-{isObject, isFunction, isArray} = require("./_helpers")
+{isObject, isFunction, isArray, rebind, getID} = require("./_helpers")
 
 module.exports = (ce) ->
   ceProto = ce.prototype
   ceProto.$nextTick = require("./_nextTick")
+  ceProto._inherit = ->
+    o = Object.create(@)
+    rebind(o)
+    return o
   if ceProto.mixins?
     ## flatten dependencies of mixins
     flattenMixins = (mixins) ->
@@ -52,24 +56,8 @@ module.exports = (ce) ->
       obj._crCb = [->
         @_isCeri = true
         @_isFirstConnect = true
-        proto = Object.getPrototypeOf(@)
-        for key in @_rebind
-          o1 = proto[key]
-          cerror(!isObject(o1),"_rebind must target object: ", key)
-          o2 = {}
-          Object.defineProperty @, key, __proto__:null, value: o2 
-          for k,v of o1
-            if isFunction(v)
-              o2[k] = v.bind(@)
-            else if isArray(v)
-              o2[k] = v.slice()
-            else if isObject(v) and v?
-              o2[k] = {}
-              for k2,v2 of v
-                o2[k2] = v2
-            else
-              o2[k] = v
-
+        @_ceriID = getID()
+        rebind(@)
       ]
       iterate: (entry) -> obj._crCb.push entry
       end: ->

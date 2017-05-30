@@ -43,7 +43,17 @@ module.exports =
     $on: (o) ->
       cbs = []
       for fn in arrayize(o.cbs)
-        fn = @[fn] if isString(fn)
+        if isString(fn)
+          splitted = fn.replace(")","").split("(")
+          if splitted.length > 1
+            cbgen = (fn, arr) ->
+              return (e) -> 
+                tmp = arr.map (path) => @$path.resolveValue(path)
+                tmp.push e
+                @[fn].apply(@,tmp)
+            fn = cbgen(splitted.shift(), splitted)
+          else
+            fn = @[fn] 
         cbs.push fn
       o._cbs = cbs
       if @_evLookup[o.event]?
@@ -65,8 +75,30 @@ module.exports =
                 if target == @
                   return
                 target = target.parentElement
-            for ocb in o._cbs
-              ocb.call @, e
+            if o.defer?.delay
+              if o.defer.canceled
+                clearTimeout o.defer.timeout
+                o.defer.canceled = false
+              delay = (isString(o.defer.delay) and @$path.getValue(o.defer.delay)) or o.defer.delay
+              if delay > 1
+                if o.defer.cancel
+                  o.defer.canceler = []
+                  for ev in arrayize(o.defer.cancel)
+                    o.defer.canceler.push @$once el:o.el, event: ev, cbs: ->
+                      o.defer.canceled = true
+                o.defer.timeout = setTimeout (=>
+                  if o.defer.canceler
+                    for deactivate in o.defer.canceler
+                      deactivate()
+                    o.defer.canceler = null
+                  unless o.defer.canceled
+                    for ocb in o._cbs
+                      ocb.call @, e
+                  o.defer.canceled = false
+                  ), delay
+            else
+              for ocb in o._cbs
+                ocb.call @, e
             e.preventDefault() if o.prevent
             e.stopPropagation() if o.stop
             o.deactivate() if o.once
