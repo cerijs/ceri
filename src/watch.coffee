@@ -76,7 +76,11 @@ module.exports =
            concat o1.initial, o2.initial
           else
             o1.initial = o2.initial
-
+        o1.parent = o2.parent if o2.parent?
+        if o2.hasOwnProperty("value")
+          oldVal = o1.value
+          o1.value = o2.value
+        @$watch.processNewValue(o1, oldVal)
       getConfig: (o) ->
         if not o.__configured__ and o.path? and (tmp = @watch?[o.path])?
           c = @$watch.parse(tmp, true)
@@ -87,11 +91,6 @@ module.exports =
         obj = @$watch.getObj(o)
         if obj?.__init__ # already initialized
           @$watch.merge(obj,o)
-          obj.parent = o.parent if o.parent?
-          if o.hasOwnProperty("value")
-            oldVal = obj.value
-            obj.value = o.value
-          @$watch.processNewValue(obj, oldVal)
           return obj
         else # not initialized yet
           @$watch.getConfig(o)
