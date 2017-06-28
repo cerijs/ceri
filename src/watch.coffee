@@ -80,9 +80,9 @@ module.exports =
         if o2.hasOwnProperty("value")
           oldVal = o1.value
           o1.value = o2.value
-          @$watch.processNewValue(o1, oldVal)
+          @$watch.processNewValue(o1, oldVal) if o1.__init__
       getConfig: (o) ->
-        if not o.__configured__ and o.path? and (tmp = @watch?[o.path])?
+        if not o.__configured__ and o.path? and @watch != Object.watch and (tmp = @watch?[o.path])?
           c = @$watch.parse(tmp, true)
           @$watch.merge(o,c)
           o.__configured__ = true
