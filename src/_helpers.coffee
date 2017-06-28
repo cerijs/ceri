@@ -50,21 +50,22 @@ module.exports =
     unless o.hasOwnProperty("_isCeri")
       proto = Object.getPrototypeOf(proto)
     for key in o._rebind
-      o1 = proto[key]
-      cerror(!isObject(o1),"_rebind must target object: ", key)
-      o2 = {}
-      Object.defineProperty o, key, __proto__:null, value: o2 
-      for k,v of o1
-        if isFunction(v)
-          o2[k] = v.bind(o)
-        else if isArray(v)
-          o2[k] = v.slice()
-        else if isObject(v) and v?
-          o2[k] = {}
-          for k2,v2 of v
-            o2[k2] = v2
-        else
-          o2[k] = v
+      unless o.hasOwnProperty(key)
+        o1 = proto[key]
+        cerror(!isObject(o1),"_rebind must target object: ", key)
+        o2 = {}
+        Object.defineProperty o, key, __proto__:null, value: o2 
+        for k,v of o1
+          if isFunction(v)
+            o2[k] = v.bind(o)
+          else if isArray(v)
+            o2[k] = v.slice()
+          else if isObject(v) and v?
+            o2[k] = {}
+            for k2,v2 of v
+              o2[k2] = v2
+          else
+            o2[k] = v
 
 test {_name:"_helpers"}, ->
   describe "ceri", ->

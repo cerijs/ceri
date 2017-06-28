@@ -55,9 +55,10 @@ module.exports =
               window.__ceriActiveInstance = @
               o.oldValue = o.value
               o.value = o.get()
-              @$watch.processNewValue(o,o.oldVal)
+              
               window.__ceriDeps = tmp
               window.__ceriActiveInstance = tmp2
+              @$watch.processNewValue(o,o.oldValue)
               # managing cyclic dependecies
               if !isObject(o.value) and !isArray(o.value) and o.oldValue != o.value
                 for c in o.cDeps

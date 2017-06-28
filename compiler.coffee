@@ -1,9 +1,10 @@
-fs = require "fs"
+fs = require "fs-extra"
 path = require "path"
 acorn = require "acorn"
 coffee = require "coffee-script"
 src = path.resolve(__dirname, "./src")
 lib = path.resolve(__dirname, "./lib")
+lastModified = {}
 
 replaceExpression = (js, expr, cb) ->
   indexOffset = 0
@@ -27,8 +28,8 @@ compile = (file) ->
     outFile = path.resolve(folder, path.basename(file,".coffee"))+".js"
     changing[file] = true
     setTimeout (-> changing[file] = false), 1000
-    fs.readFile file, 'utf8', (err, sourceCoffee) ->
-      throw err if err?
+    fs.readFile file, 'utf8'
+    .then (sourceCoffee) ->
       sourceJS = coffee.compile sourceCoffee,
         filename: file,
         bare: true,
@@ -37,9 +38,9 @@ compile = (file) ->
       sourceJS = replaceExpression sourceJS, "test", (js, node) ->
         tests++
         return js.substr(0,node.start) + js.substr(node.end)
-      fs.writeFile outFile, sourceJS, (err) ->
+      fs.writeFile outFile, sourceJS
+      .then ->
         changing[file] = false
-        throw err if err?
         console.log "compiled #{file} to #{outFile} - #{tests} tests removed"
 
 if process.argv[2] == "--watch"
@@ -48,15 +49,36 @@ if process.argv[2] == "--watch"
   .on "add", compile
   .on "change", compile
 else
-  processDir = (dir) ->
-    fs.readdir dir, (err, entries) ->
-      throw err if err?
-      entries.forEach (entry) -> 
-        name = path.resolve(dir,entry)
-        fs.lstat name, (err, stats) ->
-          throw err if err?
-          if stats.isDirectory()
-            processDir(name)
-          else if stats.isFile()
-            compile(name)
-  processDir(src)
+  processDir = (src, lib) ->
+    Promise.all [fs.readdir(src), fs.readdir(lib)]
+    .then ([srcEntries, libEntries]) ->
+      workers = []
+      srcEntries.forEach (srcEntry) ->
+        srcFilename = path.resolve(src,srcEntry)
+        promise = fs.lstat(srcFilename)
+          .then (stats) ->
+            if stats.isDirectory()
+              libFilename = path.resolve(lib,srcEntry)
+              fs.ensureDir(libFilename)
+              .then -> processDir(srcFilename,libFilename)
+            else if stats.isFile() and (libEntries.indexOf(srcEntry.replace(".coffee",".js")) < 0 or not lastModified[srcFilename] or lastModified[srcFilename] != stats.mtime.getTime())
+              compile(srcFilename)
+              .then ->
+                lastModified[srcFilename] = stats.mtime.getTime()
+        workers.push promise
+        
+      for libEntry in libEntries
+        if srcEntries.indexOf(libEntry.replace(".js",".coffee")) < 0
+          workers.push fs.remove(path.resolve(lib, libEntry))
+      Promise.all workers
+
+  start = Date.now()
+  fs.readJson("./_lastModified")
+  .then (obj) ->
+    lastModified = obj
+  .catch (e) -> return null
+  .then -> processDir(src, lib)
+  .then -> fs.writeJson("./_lastModified", lastModified)
+  .then ->
+    console.log "compilation took: "+(Date.now()-start)+"ms"
+  .catch (e) -> console.log e

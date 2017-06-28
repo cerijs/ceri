@@ -42,19 +42,36 @@ module.exports =
       return @$on(o)
     $on: (o) ->
       cbs = []
-      for fn in arrayize(o.cbs)
-        if isString(fn)
-          splitted = fn.replace(")","").split("(")
+      strToFn = (str) =>
+        if isString(str)
+          splitted = str.replace(")","").split("(")
           if splitted.length > 1
-            cbgen = (fn, arr) ->
-              return (e) -> 
-                tmp = arr.map (path) => @$path.resolveValue(path)
-                tmp.push e
-                @[fn].apply(@,tmp)
-            fn = cbgen(splitted.shift(), splitted)
+            fn = @$path.resolveValue(splitted.shift())
+            return (e) ->
+              tmp = arr.map (path) => @$path.resolveValue(path)
+              tmp.push e
+              fn.apply(@,tmp)
           else
-            fn = @[fn] 
-        cbs.push fn
+            return @$path.resolveValue(str)
+        else if isFunction(str)
+          return str
+        else
+          return null
+      _fns = {}
+      for str in arrayize(o.cbs)
+        if o.dyn and isString(str)
+          @$computed.orWatch str, (str2, oldStr) ->
+            if (oldFn = _fns[oldStr])? 
+              delete _fns[oldStr]
+              oldStr = oldFn
+            if (index = cbs.indexOf(oldStr)) > -1
+              cbs.splice index, 1
+            if (fn = strToFn(str2))?
+              cbs.push fn
+              if fn != str2
+                _fns[str2] = fn
+        else
+          cbs.push strToFn(str)
       o._cbs = cbs
       if @_evLookup[o.event]?
         o = @_evLookup[o.event].call(@,o)

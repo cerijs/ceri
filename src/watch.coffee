@@ -80,7 +80,7 @@ module.exports =
         if o2.hasOwnProperty("value")
           oldVal = o1.value
           o1.value = o2.value
-        @$watch.processNewValue(o1, oldVal)
+          @$watch.processNewValue(o1, oldVal)
       getConfig: (o) ->
         if not o.__configured__ and o.path? and (tmp = @watch?[o.path])?
           c = @$watch.parse(tmp, true)
@@ -128,9 +128,12 @@ module.exports =
             o.notify.owner = o
             @$watch.processNewValue(o)
           # triggering cbs
-          if o.initial and o.value?
-            for cb in o.initial
-              cb.call(@,o.value)
+          if o.initial 
+            if o.value?
+              for cb in o.initial
+                cb.call(@,o.value)
+            else if o.dirty
+              o.notify()
             o.initial = false
         return o
 
@@ -178,15 +181,19 @@ module.exports =
         else # sharing of watchers
           if isPrimitiv # save on parent
             if (tmp = parent[watchStr2])?
-              tmp[o.name] ?= {}
-              wrapper = tmp[o.name]
+              wrapper = tmp[o.name] ?= {}
           else # save on prototype
             unless (wrapper = child[watchStr])?
               wrapper = {}
+              obj = {}
+              obj[watchStr] = value: wrapper
+              obj[watchStr2] = value: {} unless isArray(child)
+              obj["$notify"] = value: ->
+                for k, obj of wrapper
+                  obj.notify()
+              setProto(obj)
           if wrapper
-            wrapper[id] = o
-            unless wrapper[id]?
-              wrapper[id] = o
+            wrapper[id] ?= o
             if shouldSetup
               cerror !wrapper, "error setting up watcher for #{o.name} on #{o.parent}"
               value = o.value
@@ -200,23 +207,16 @@ module.exports =
                 # iterate over children
                 value = newVal
                 for k, obj of wrapper
-                  oldVal = obj.value
+                  obj.oldVal = obj.value
                   obj.value = newVal
-                  obj.instance.$watch.processNewValue(obj,oldVal)
-                  obj.notify(newVal, oldVal)
+                for k, obj of wrapper
+                  obj.instance.$watch.processNewValue(obj,obj.oldVal)
+                  obj.notify(obj.value, obj.oldVal)
               define(getter, setter.bind(@))
-          if hasProto and not child[watchStr]?
-            obj = {}
-            obj[watchStr] = value: wrapper
-            obj[watchStr2] = value: {} unless isArray(child)
-            obj["$notify"] = value: ->
-              for k, obj of wrapper
-                obj.instance.notify()
-            setProto(obj)
+          
           
         # remove reference from old value
-        if oldVal? and 
-            oldVal != child
+        if oldVal? and oldVal != child
           if (obj = oldVal[watchStr])?[id]?
             delete obj[id] 
           if (obj = oldVal[watchStr2])?
@@ -227,7 +227,7 @@ module.exports =
         if not isPrimitiv and not isArray(child) and not child._isCeri
           for own k, v of child
             @$watch.path(parent: child, name:k, value:v, parentPath: o.path)
-          if isObject(oldVal) and not isArray(oldVal) and not child._isCeri
+          if isObject(oldVal) and not isArray(oldVal) and not oldVal._isCeri
             watcher2 = child[watchStr2]
             for own k, v of oldVal
               if v != (newVal = child[k])
@@ -303,14 +303,10 @@ test module.exports, (merge) ->
         el.someObj.someNestedProp = "test31"
         spy(5).should.have.been.called.with "test31","test30"
       it "should work with nested shared objs", ->
-        el.sharedObj.nested = "test40"
-        #spy(6).should.have.been.called.twice
-        #spy(7).should.have.been.called.twice
         spy(6).reset()
         spy(7).reset()
         el.sharedObj.nested = "test41"
         el2.sharedObj.nested.should.equal "test41"
-
         spy(6).should.have.been.called.with "test41","test40"
         spy(7).should.have.been.called.with "test41","test40"
       it "should work with shared objs", ->
