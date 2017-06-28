@@ -30,7 +30,7 @@ test module.exports, (merge) ->
             """)
           data: ->
             template: template 1, """<p></p>"""
-        el.$nextTick done
+        setTimeout done, 50
       after -> el.remove()
       it "should work", ->
         el.should.contain "p"

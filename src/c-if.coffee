@@ -41,7 +41,7 @@ test module.exports, (merge) ->
             isVisible: false
             template: template(1,"<p>test2</p>")
             elseTemplate: template(1,"<p>else</p>")
-        el.$nextTick done
+        setTimeout done, 50
       after -> el.remove()
       it "should work", ->
         el.should.have.text "else"

@@ -41,7 +41,7 @@ test module.exports, (merge) ->
           data: ->
             arr: [3,2,1]
               
-        el.$nextTick done
+        setTimeout done, 50
       after -> el.remove()
       it "should work with arrays", ->
         el.should.have.text "0 31 22 1"
