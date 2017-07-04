@@ -1,20 +1,26 @@
 prefixes = ["Webkit", "Moz", "ms"]
-{camelize, capitalize, isArray} = require "./_helpers"
+{camelize, capitalize, isArray, isFunction,clone, isObject} = require "./_helpers"
 
 module.exports =
   _name: "style"
   _v: 1
   _rebind: "$style"
   _prio: 700
-  _mergers: require("./_merger").copy(source: "initStyle")
+  _mergers: [
+    require("./_merger").copy(source: "initStyle")
+    require("./_merger").copy(source: "computedStyle")
+  ]
   _attrLookup:
     style:
       "#": (o) ->  @$computed.orWatch o.value, (val) -> @$style.set o.el, val
-
+  mixins: [
+    require "./parseElement"
+  ]
   methods:
     $style:
       normalize: (prop, el = @) ->
         prop = camelize(prop)
+        el = @$parseElement.byString(el)
         return prop if el.style[prop]?
         prop = capitalize(prop)
         for prefix in prefixes
@@ -25,9 +31,11 @@ module.exports =
         tmp = {}
         normalize = @$style.normalize
         for k,v of obj
-          tmp[normalize(k,el)] = v
+          key = normalize(k,el)
+          tmp[key] = v if key
         return tmp
       setNormalized: (el, obj) ->
+        el = @$parseElement.byString(el)
         for k,v of obj
           if isArray(v) and v[0]?
             el.style[k] = v.join("")
@@ -39,9 +47,17 @@ module.exports =
           el = @
         @$style.setNormalized(el,@$style.normalizeObj(obj,el))
   connectedCallback: ->
-    if @_isFirstConnect and @initStyle?
-      @$style.set @, @initStyle
-
+    if @_isFirstConnect
+      if (ins = @initStyle)?
+        unless isObject(ins[Object.keys(ins)[0]])
+          ins = this: ins
+        for el, s of ins
+          @$style.set el, s
+      if (cs = @computedStyle)?
+        if isFunction(cs)
+          cs = this: cs
+        for el, c of cs
+          @$computed.parseAndInit c, cbs: ((el, val) -> @$style.set(el, val)).bind(@,el)
 
 test module.exports, (merge) ->
   describe "ceri", ->

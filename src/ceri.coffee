@@ -7,6 +7,7 @@ module.exports = (ce) ->
   ceProto._inherit = ->
     o = Object.create(@)
     rebind(o)
+    o.__parent = @
     return o
   if ceProto.mixins?
     ## flatten dependencies of mixins
@@ -16,7 +17,7 @@ module.exports = (ce) ->
         if mixin.mixins?
           addMixins = flattenMixins(mixin.mixins).concat addMixins
       for mixin in addMixins
-        if mixins.indexOf(mixin) == -1
+        unless ~mixins.indexOf(mixin)
           mixins.push mixin
       return mixins
     flattenMixins(ceProto.mixins)

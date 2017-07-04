@@ -1,4 +1,4 @@
-{noop, isString, isArray, isObject, isFunction, clone, getID} = require("./_helpers")
+{noop, isString, isArray, isObject, isFunction, clone, getID,assign} = require("./_helpers")
 window.__ceriDeps = null
 id = 0
 module.exports =
@@ -18,71 +18,102 @@ module.exports =
           o.path = "__computed."+o.id
           o.parent = @__computed
           o.name = o.id
+        o.parent ?= @
+        o.name ?= o.path
         @$watch.parse(o)
         o = @$watch.init(o) 
         unless o.__init__ # needs setup
           o.__init__ = true
-          o.id ?= getID()
           o.isComputed = true
-          o.deps = (id) ->
-            o.deps[id] = true
+          o.deps = (obj) ->
+            o.deps[obj.id] = true
+            o.ascs.push obj
             return o
-          o.cDeps = []
+          o.ascs = []
+          o.nullTaints = ->
+            for obj in o.ascs
+              obj.nullTaints() if o != obj and obj._taints
+            o._taints = null
+          o.getTaints = (hash) ->
+            if !(taints = o._taints)?
+              taints = o._taints = o.cDeps.reduce(((h, c) ->
+                unless c._gettingTaints
+                  c._gettingTaints = true
+                  h = c.getTaints(h)
+                  c._gettingTaints = false
+                  return h
+                else
+                  unless h[c.id]
+                    h[c.id] = true
+                    h._taints.push c.taint
+                  return h
+                ), _taints: [o.taint])._taints
+            if hash?
+              tmp = hash._taints
+              for t in taints
+                unless hash[t.id]
+                  hash[t.id] = true
+                  tmp.push t
+              return hash
+            else
+              return taints
           o.instance = @
-          o.notify = ->
+          o.taint = ->
             o.dirty = true
             if o.cbs.length > 0
+              instance = o.instance
               oldVal = o.value
               newVal = o.parent[o.name]
-              instance = o.instance
               for cb in o.cbs
-                cb.call(instance, newVal, oldVal)
-            for c in o.cDeps
-              c.notify() unless c.dirty
+                cb.call(instance, newVal, oldVal, o)
+          o.taint.id = o.id
+          o.notify = ->
+            for cb in o.getTaints()
+              cb()
           o.notify.owner = o
           if o.set?
             o.setter = o.set.bind(@)
           else
             o.setter = noop
           o.get = o.get.bind(@)
-          o.oldValue = null
+          o.oldVal = null
           o.getter = ->
             if o.dirty # get all watcher dependecies
+              inst = o.instance
               o.dirty = false
               tmp = window.__ceriDeps
               tmp2 = window.__ceriActiveInstance
               window.__ceriDeps = o.deps
-              window.__ceriActiveInstance = @
-              o.oldValue = o.value
+              window.__ceriActiveInstance = if o.master then null else inst
+              o.oldVal = o.value
               o.value = o.get()
-              
               window.__ceriDeps = tmp
               window.__ceriActiveInstance = tmp2
-              @$watch.processNewValue(o,o.oldValue)
               # managing cyclic dependecies
-              if !isObject(o.value) and !isArray(o.value) and o.oldValue != o.value
+              if !isObject(o.value) and !isArray(o.value) and o.oldVal != o.value
                 for c in o.cDeps
                   if not c.dirty and o.deps[c.id]?
                     c.notify()
-
-            if window.__ceriDeps? and not window.__ceriDeps[o.id]?
-              o.cDeps.push window.__ceriDeps(o.id)
+              inst.$watch.processNewValue(o)
+            
+            o.checkComputed()
             return o.value
-          o.getter = o.getter.bind(@)
           deferred = ->
-            o.dirty = true
             Object.defineProperty o.parent, o.name,
               get: o.getter
               set: o.setter
+            
             # next tick, so all computed values are setup
             if o.cbs.length > 0
               @$nextTick o.notify
-            else # search for descendand deps
-              @$nextTick ->
-                for k in Object.keys(@$watch.__w)
-                  if k.indexOf(o.path) > -1 and k != o.path
-                    o.parent[o.name]
-                    break
+            else 
+              o.dirty = true
+              # search for descendand deps
+              for k,v of @$watch.__w
+                if ~k.indexOf(o.path) and k != o.path
+                  o.cbs.push noop
+                  @$nextTick o.notify
+                  break
           if @$computed.__deferredInits and not o.noWait
             @$computed.__deferredInits.push deferred
           else
@@ -99,16 +130,15 @@ module.exports =
           return @$watch.path path:val, cbs: cbs
         else
           return @$computed.init get: val, cbs: cbs
+      parseAndInit: (obj, options) ->
+        if isObject(obj)
+          obj = clone(obj)
+        else
+          obj = {get: obj}
+        @$computed.init assign(obj,options)
       setup: (obj, parent = @) ->
         for k,v of obj
-          if isObject(v)
-            v = clone(v)
-          else
-            v = {get: v} 
-          v.parent = parent
-          v.name = k
-          v.path = k
-          @$computed.init v
+          @$computed.parseAndInit v, {parent:parent, name:k, path:k}
   created: ->
     @$computed.__deferredInits = []
     @__computed = {} # to hold all anonymous computed values
@@ -156,6 +186,8 @@ test module.exports, (merge) ->
         el.someData = "test3"
         el.someData2.should.equal "test3"
         el.someData3.should.equal "test3"
+        el.someData = "test33"
+        el.someData3.should.equal "test33"
       it "should work with combined dependecies", ->
         el.someData = "test4"
         el.someData4.should.equal "test4test4"
@@ -173,4 +205,5 @@ test module.exports, (merge) ->
         el.someData9.should.equal "test7"
         el.someData = "test8"
         el.someData9.should.equal "test8"
+        
       after -> el.remove()

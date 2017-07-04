@@ -18,7 +18,7 @@ throttled = (el, event, cb) ->
   if o.cbs.length == 1
     el.addEventListener event, o.listener
   return ->
-    if (i = o.cbs.indexOf(cb)) > -1
+    if ~(i = o.cbs.indexOf(cb))
       o.cbs.splice(i,1)
       if o.cbs.length == 0
         el.removeEventListener event, o.listener
@@ -48,7 +48,10 @@ module.exports =
           if splitted.length > 1
             fn = @$path.resolveValue(splitted.shift())
             return (e) ->
-              tmp = arr.map (path) => @$path.resolveValue(path)
+              tmp = splitted.map (path) =>
+                newPath = path.replace(/[\"']/g,"")
+                return newPath if newPath != path
+                @$path.resolveValue(path)
               tmp.push e
               fn.apply(@,tmp)
           else
@@ -64,7 +67,7 @@ module.exports =
             if (oldFn = _fns[oldStr])? 
               delete _fns[oldStr]
               oldStr = oldFn
-            if (index = cbs.indexOf(oldStr)) > -1
+            if ~(index = cbs.indexOf(oldStr))
               cbs.splice index, 1
             if (fn = strToFn(str2))?
               cbs.push fn
@@ -85,7 +88,7 @@ module.exports =
           cb = (el, e) ->
             return if o.self and e.target != el
             return if o.notPrevented and e.defaultPrevented
-            return if o.keyCode and o.keyCode.indexOf(e.keyCode) == -1
+            return if o.keyCode and not ~o.keyCode.indexOf(e.keyCode)
             if o.outside
               target = e.target
               while target?

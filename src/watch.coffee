@@ -1,28 +1,8 @@
 {arrayize, isString, isArray, isObject,clone, getID, concat} = require("./_helpers")
 merger = require("./_merger")
-arrayProto = Object.create(Array.prototype)
 watchStr = "__watch__"
-watchStr2 = "__watchChild__"
 instancesStr = "__instances__"
-for method in  ['push','pop','shift','unshift','splice','sort','reverse']
-  arrayProto[method] = ->
-    @$notify()
-    Array.prototype[method].apply @, arguments
-  ###fn = (method, cb) -> ->
-    cb?.apply(@,arguments)
-    @[watchStr].notify(@)
-    return arrayProto[method].apply @, arguments
-  switch method
-    when 'push','unshift'
-      arrayProto[method] = fn method, ->
-        o = @[watchStr]
-        o.init(arr: arguments, notify: o.notify)
-    when 'splice'
-      arrayProto[method] = fn method, ->
-        o = @[watchStr]
-        o.init(arr: arguments.slice(2), notify: o.notify)
-    else
-      arrayProto[method] = fn method###
+
 module.exports =
   _name: "watch"
   _prio: 1000
@@ -45,8 +25,16 @@ module.exports =
         return null
 
       setObj: (o) ->
-        @$watch.__w[o.path] = o
+        w = @$watch
+        w.__w[o.path] = w.sharedInit(o)
 
+      notify: (path) ->
+        unless (o = @$watch.getObj(path:path))
+          unless (o = @__parent?.$watch.getObj(path:path))
+            cwarn(true, "watch: couldn't notify #{path}")
+            return  
+        o.notify(o.value)
+      
       parseCbs: (o, prop) ->
         o[prop] = arrayize(o[prop]).map (cb) =>
           if isString(cb)
@@ -76,35 +64,92 @@ module.exports =
            concat o1.initial, o2.initial
           else
             o1.initial = o2.initial
-        o1.parent = o2.parent if o2.parent?
-        if o2.hasOwnProperty("value")
-          oldVal = o1.value
-          o1.value = o2.value
-          @$watch.processNewValue(o1, oldVal) if o1.__init__
+        if o2.parent?
+          o1.parent = o2.parent
+          @$watch.setupParent(o1) if o1.__init__
+        if o2.hasOwnProperty("value") and o2.value != o1.value
+          o1.parent[o1.name] = o2.value
       getConfig: (o) ->
         if not o.__configured__ and o.path? and @watch != Object.watch and (tmp = @watch?[o.path])?
-          c = @$watch.parse(tmp, true)
-          @$watch.merge(o,c)
+          w = @$watch
+          c = w.parse(tmp, true)
+          w.merge(o,c)
           o.__configured__ = true
 
       init: (o) ->
-        obj = @$watch.getObj(o)
+        w = @$watch
+        obj = w.getObj(o)
         if obj?.__init__ # already initialized
-          @$watch.merge(obj,o)
+          w.merge(obj,o)
           return obj
         else # not initialized yet
-          @$watch.getConfig(o)
+          w.getConfig(o)
           if obj # but object already saved
-            @$watch.merge(obj, o) 
-            return obj
+            w.merge(obj, o) 
+            return w.sharedInit(obj)
           else
-            @$watch.setObj(o)
-            return o
-
+            return w.setObj(o)
+             
+      sharedInit: (o) ->
+        unless o.__sInit__
+          o.__sInit__ = true
+          o.cDeps = []
+          o._taints = null
+          o.id = getID()
+          o.instance = @
+          o.checkComputed = ->
+            if (not (cai = window.__ceriActiveInstance)? or cai == o.instance or cai.__parent == o.instance) and 
+                ((cd = window.__ceriDeps)? and not cd[o.id]?)
+              o.cDeps.push (cd(o))
+              o.nullTaints()
+        return o
+      setupParent: (o) ->
+        parent = o.parent
+        name = o.name
+        if o.oldParent != parent
+          if (oldArr = o.watchArr)?
+            if ~(i = oldArr.indexOf(o))
+              oldArr.splice(i,1)
+            delete o.watchArr
+          o.oldParent = parent
+          if not (desc = Object.getOwnPropertyDescriptor parent, name)? or not desc.get
+            Object.defineProperty parent, name,
+              configurable: true
+              enumerable: true
+              get: ->
+                for obj in wrapper.objs
+                  obj.checkComputed()
+                return wrapper.value
+              set: (newVal) ->
+                wrapper.value = newVal
+                for obj in wrapper.objs
+                  obj.oldVal = obj.value
+                  obj.value = newVal
+                  # iterate over children
+                  obj.instance.$watch.processNewValue(obj)
+                  obj.notify(newVal, obj.oldVal)
+        unless o.watchArr
+          unless parent._isCeri
+            unless (wrapper = parent[watchStr])?
+              wrapper = {}
+              obj = {}
+              obj[watchStr] = value: wrapper
+              parent.__proto__ = Object.create parent.__proto__, obj
+            wrapper = wrapper[name] ?= {
+                objs: []
+                value: o.value
+              }
+            wrapper.objs.push o
+          else
+            wrapper = 
+              objs: [o]
+              value: o.value
+          o.watchArr = wrapper.objs
+        return o
       path: (o) ->
         if o.parentPath? and o.name?
           o.path = o.parentPath + "." + o.name
-        cwarn !o.path?, "$watch.path requires path"
+        #cwarn !o.path?, "$watch.path requires path"
         @$path.toNameAndParent(o)
         @$watch.parse(o)
         unless o.parent # save cbs for later
@@ -118,14 +163,19 @@ module.exports =
           o = @$watch.init(o)
           unless o.__init__ # needs setup
             o.__init__ = true
-            o.id = getID()
-            o.instance = @
             o.value ?= o.parent[o.name]
-            o.notify = (val = o.value, oldVal = o.value) ->
+            
+            o.nullTaints = -> o._taints = null
+            o.notify = (val, oldVal) ->
+              unless (taints = o._taints)?
+                taints = o._taints = o.cDeps.reduce(((h, c) -> c.getTaints(h,true)
+                ), _taints: [])._taints
+              for taint in taints
+                taint()
               for cb in o.cbs
-                cb.call(o.instance, val, oldVal)
+                cb.call(o.instance, val, oldVal, o)
               return
-            o.notify.owner = o
+            @$watch.setupParent(o)
             @$watch.processNewValue(o)
           # triggering cbs
           if o.initial 
@@ -133,106 +183,24 @@ module.exports =
               for cb in o.initial
                 cb.call(@,o.value)
             else if o.dirty
-              o.notify()
+              o.notify(o.value)
             o.initial = false
         return o
 
-      processNewValue: (o, oldVal) ->
-        id = @_ceriID
+      processNewValue: (o) ->
         child = o.value
         parent = o.parent
-        shouldSetup = not o.isComputed and 
-          (not (desc = Object.getOwnPropertyDescriptor parent, o.name)? or 
-          not desc.get)
-        parentIsInstance = parent == @
-        hasProto = child?.__proto__?
-        isPrimitiv = not child? or isString(child) or not hasProto
-        define = (getter, setter) ->
-          Object.defineProperty o.parent, o.name,
-            configurable: true
-            enumerable: true
-            get: getter
-            set: setter
-        setProto = (obj) ->
-          if isArray(child)
-            proto = arrayProto
-          else
-            proto = child.__proto__
-          child.__proto__ = Object.create proto, obj
-        if parentIsInstance # no sharing
-          if shouldSetup # simple setup
-            getter = ->
-              if window.__ceriDeps? and not window.__ceriDeps[o.id]?
-                o.cbs.push window.__ceriDeps(o.id).notify
-              return o.value
-            setter = (newVal) ->
-              oldVal = o.value
-              o.value = newVal
-              # iterate over children
-              @$watch.processNewValue(o,oldVal)
-              o.notify(newVal, oldVal)
-            define(getter, setter.bind(@))
-          unless isPrimitiv # prepare saving children watchers
-            unless child.$notify
-              obj = {}
-              obj[watchStr2] = value: {}
-              obj["$notify"] = value: o.notify
-              setProto(obj)
-        else # sharing of watchers
-          if isPrimitiv # save on parent
-            if (tmp = parent[watchStr2])?
-              wrapper = tmp[o.name] ?= {}
-          else # save on prototype
-            unless (wrapper = child[watchStr])?
-              wrapper = {}
-              obj = {}
-              obj[watchStr] = value: wrapper
-              obj[watchStr2] = value: {} unless isArray(child)
-              obj["$notify"] = value: ->
-                for k, obj of wrapper
-                  obj.notify()
-              setProto(obj)
-          if wrapper
-            wrapper[id] ?= o
-            if shouldSetup
-              cerror !wrapper, "error setting up watcher for #{o.name} on #{o.parent}"
-              value = o.value
-              getter =  ->
-                if window.__ceriDeps? and 
-                    (o = wrapper[window.__ceriActiveInstance._ceriID])? and
-                    not window.__ceriDeps[o.id]?
-                  o.cbs.push window.__ceriDeps(o.id).notify
-                return value
-              setter = (newVal) ->
-                # iterate over children
-                value = newVal
-                for k, obj of wrapper
-                  obj.oldVal = obj.value
-                  obj.value = newVal
-                for k, obj of wrapper
-                  obj.instance.$watch.processNewValue(obj,obj.oldVal)
-                  obj.notify(obj.value, obj.oldVal)
-              define(getter, setter.bind(@))
+        isValidObj = (obj) -> isObject(obj) and not isArray(obj) and not obj?._isCeri
           
-          
-        # remove reference from old value
-        if oldVal? and oldVal != child
-          if (obj = oldVal[watchStr])?[id]?
-            delete obj[id] 
-          if (obj = oldVal[watchStr2])?
-            for k,v of obj
-              delete v[id] if v[id]?
-
         # wiring all cbs for all children
-        if not isPrimitiv and not isArray(child) and not child._isCeri
+        if isValidObj(child)
           for own k, v of child
             @$watch.path(parent: child, name:k, value:v, parentPath: o.path)
-          if isObject(oldVal) and not isArray(oldVal) and not oldVal._isCeri
-            watcher2 = child[watchStr2]
-            for own k, v of oldVal
-              if v != (newVal = child[k])
-                notify = newVal?.$notify || watcher2?[k]?[id]?.notify
-                notify?(newVal, oldVal)
+          if o.oldVal and isValidObj(o.oldVal) # detect deleted props
+            for own k, v of o.oldVal
+              unless child.hasOwnProperty(k)
+                if (obj = @$watch.getObj(path: o.path+"."+k))?
+                  obj.notify(null,v)
 
   created: ->
     # make data responsive
@@ -295,10 +263,6 @@ test module.exports, (merge) ->
         el.someData = "test2"
         spy(1).should.have.been.called.with "test2", "test"
         spy(4).should.have.been.called.with "test2", "test"
-      it "should work with arrays", ->
-        spy(3).reset()
-        el.someArray.push "test21"
-        spy(3).should.have.been.called.once()
       it "should work with nested props", ->
         el.someObj.someNestedProp = "test31"
         spy(5).should.have.been.called.with "test31","test30"

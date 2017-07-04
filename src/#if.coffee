@@ -27,7 +27,7 @@ module.exports =
             else
               @$structure.afterInsert.push ->
                 o.el.parentElement.insertBefore comment, o.el.nextSibling
-          @$structure.afterInsert.push cb
+            @$structure.afterInsert.push cb
         else 
           cwarn true, "#if: no parent found for element: " + o.el
           return null

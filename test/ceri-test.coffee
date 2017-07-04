@@ -2,7 +2,7 @@ require("document-register-element/pony")(global,'force')
 
 _mixins = []
 window.test = (mixin, cb) ->
-  unless mixin._name? and _mixins.indexOf(mixin._name) > -1
+  unless mixin._name? and ~_mixins.indexOf(mixin._name)
     _mixins.push mixin._name
     cb (obj) ->
       obj.mixins ?= []

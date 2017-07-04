@@ -1,6 +1,7 @@
 isArray = Array.isArray
 isObject = (obj) -> typeof obj == "object"
 isFunction = (obj) -> typeof obj == "function"
+isPlainObject = (obj) -> isObject(obj) && Object.prototype.toString.call(obj) == "[object Object]"
 h = /([^-])([A-Z])/g
 id = 0
 module.exports =
@@ -31,6 +32,7 @@ module.exports =
   isString: (obj) -> typeof obj == "string" or obj instanceof String
   isArray: isArray
   isObject: isObject
+  isPlainObject: isPlainObject
   isFunction: isFunction
   isElement: (obj) ->
     if typeof HTMLElement == "object"
@@ -41,10 +43,15 @@ module.exports =
   capitalize: (str) -> str.charAt(0).toUpperCase() + str.slice(1)
   hyphenate: (str) -> str.replace(h, '$1-$2').toLowerCase()
   clone: (o) ->
-    cln = {}
-    for own k,v of o
-      cln[k] = v
-    return cln
+    if isPlainObject(o)
+      cln = {}
+      for own k,v of o
+        cln[k] = v
+      return cln
+    else if isArray(o)
+      return o.slice()
+    else
+      return o
   rebind: (o) ->
     proto = Object.getPrototypeOf(o)
     unless o.hasOwnProperty("_isCeri")

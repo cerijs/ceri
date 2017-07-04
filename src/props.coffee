@@ -9,7 +9,7 @@ module.exports =
       arr = arrayize(obj.prototype.observedAttributes)
       for k,v of obj.prototype.props
         hyphenated = hyphenate(k)
-        unless arr.indexOf(hyphenated) > -1
+        unless ~arr.indexOf(hyphenated)
           arr.push hyphenated
       Object.defineProperty obj, "observedAttributes", value: arr
   mixins: [

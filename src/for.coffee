@@ -1,4 +1,4 @@
-{isObject, isString, isArray, noop} = require("./_helpers")
+{isObject, isString, isArray, noop, clone} = require("./_helpers")
 
 module.exports =
   _name: "for"
@@ -28,6 +28,7 @@ module.exports =
       else
         tmpl = template
       getEls = (obj) -> if tmpl then tmpl.call(obj) else []
+      
       objs = []
       valname = names.shift()
       if computed?
@@ -40,24 +41,36 @@ module.exports =
         if value?
           last = null
           parent = anchor.parentElement
+          getNext = ->
+            return objs[last]._start if last?
+            return anchor
+          appendComments = (tmp) ->
+            el = tmp._start = document.createComment "for-item-start"
+            parent.insertBefore el, getNext()
           append = (tmp) ->
             unless tmp._appended
               tmp._appended = true 
               els = tmp._els
-              if last? and (__els = objs[last]._els)? and (sibling = __els[0])?
-                next = sibling
-              else
-                next = anchor
+              next = getNext()
+              tmp._end = next
               for el in els
                 parent.insertBefore(el, next)
           remove = (tmp) ->
-            val._appended = false
-            for el in tmp._els
-              el.remove()
+            if tmp._appended
+              val._appended = false
+              els = tmp._els = []
+              el = tmp._start.nextSibling
+              end = tmp._end
+              while el != end
+                tmpel = el
+                el = el.nextSibling
+                els.push tmpel
+                tmpel.remove()
           if isArray(value)
             indexname = names[0] if names[0]
             keyname = names[1] if names[1]
             for val, i in value by -1
+              #val = clone(val)
               if (tmp = objs[i])?
                 if val != tmp[valname]
                   tmp[valname] = val
@@ -73,6 +86,7 @@ module.exports =
                 if keyname
                   tmp.$watch.path(parent:tmp, name: keyname, value: "", path: keyname)
                 addComputed(tmp)
+                appendComments(tmp)
                 tmp._els = getEls(tmp)
               append(tmp)
               last = i
@@ -100,6 +114,7 @@ module.exports =
                 if keyname
                   tmp.$watch.path(parent:tmp, name: keyname, value: key, path: keyname)
                 addComputed(tmp)
+                appendComments(tmp)
                 tmp._els = getEls(tmp)
               append(tmp)
               last = i

@@ -9,7 +9,7 @@ easing =
 processStyle = (style, aniStyle, fac, preserve) ->
   transform = []
   for key, val of aniStyle
-    if preserve? and preserve.indexOf(key) > -1
+    if preserve? and ~preserve.indexOf(key)
       continue
     tmp = val[0] + fac * (val[1] - val[0])
     tmp += val[2] if val[2]
