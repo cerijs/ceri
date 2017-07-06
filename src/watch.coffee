@@ -8,7 +8,7 @@ module.exports =
   _prio: 1000
   _v: 1
   _mergers: [
-    merger.copy(source: "watch")
+    merger.copy(source: "watch", target: "_watch")
     merger.concat(source: "data")
   ]
   _rebind: "$watch"
@@ -70,7 +70,7 @@ module.exports =
         if o2.hasOwnProperty("value") and o2.value != o1.value
           o1.parent[o1.name] = o2.value
       getConfig: (o) ->
-        if not o.__configured__ and o.path? and @watch != Object.watch and (tmp = @watch?[o.path])?
+        if not o.__configured__ and o.path? and (tmp = @_watch?[o.path])?
           w = @$watch
           c = w.parse(tmp, true)
           w.merge(o,c)
