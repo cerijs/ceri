@@ -1,4 +1,4 @@
-{arrayize} = require("./_helpers")
+{arrayize, isObject} = require("./_helpers")
 module.exports =
   apply: (obj,mixins,mergers) ->
     mergers = arrayize(mergers)
@@ -21,8 +21,10 @@ module.exports =
     merger.target ?= merger.source
     merger.setup = (obj) ->
       if merger.target
-        obj[merger.target] ?= {}
-        target = obj[merger.target]
+        unless (target = obj[merger.target])?
+          if merger.source == merger.target or not isObject(o = obj[merger.source])
+            o = {}
+          target = obj[merger.target] = o
       else
         target = obj
         if obj[merger.source]?
