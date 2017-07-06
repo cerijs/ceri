@@ -20,6 +20,7 @@ module.exports =
           value: o.iterate?[""]
           names: o.names?[""]?.split(",")
           computed: o.computed?[""]
+          id: o.id?[""]
         if (tap = o.tap?[""])?
           @$path.setValue(path:tap, value: objs)
       return comment

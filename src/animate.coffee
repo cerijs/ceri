@@ -115,8 +115,8 @@ module.exports =
           else
             return 0.5 + (1 - fn(1 - (percent-0.5)*2))
         when "out" then (percent) -> 1 - fn(1 - percent)
-  created: ->
-    @$animations = []
+  data: ->
+    $animations: []
   destroy: -> 
     for ani in @$animations
       ani.stop()

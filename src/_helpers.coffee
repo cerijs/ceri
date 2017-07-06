@@ -2,6 +2,7 @@ isArray = Array.isArray
 isObject = (obj) -> typeof obj == "object"
 isFunction = (obj) -> typeof obj == "function"
 isPlainObject = (obj) -> isObject(obj) && Object.prototype.toString.call(obj) == "[object Object]"
+concat = (arr1,arr2) -> Array.prototype.push.apply(arr1, arr2)
 h = /([^-])([A-Z])/g
 id = 0
 module.exports =
@@ -20,7 +21,7 @@ module.exports =
       for source in sources
         for own k,v of source
           target[k] ?= v
-  concat: (arr1,arr2) -> Array.prototype.push.apply(arr1, arr2)
+  concat: concat
   identity: (val) -> return val
   arrayize: (obj) ->
     if isArray(obj)

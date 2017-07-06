@@ -7,7 +7,7 @@ module.exports =
     require("./computed")
   ]
   methods: 
-    $for: ({anchor, template, names, value, computed}) ->
+    $for: ({anchor, template, names, value, computed, id}) ->
       cerror !names or !isArray(names), "$for called without array of names"
       cerror !value, "$for called without iteratable"
       tmpl = null
@@ -42,22 +42,24 @@ module.exports =
           last = null
           parent = anchor.parentElement
           getNext = ->
-            return objs[last]._start if last?
+            return last._start if last?
             return anchor
           appendComments = (tmp) ->
-            el = tmp._start = document.createComment "for-item-start"
-            parent.insertBefore el, getNext()
+            el = tmp._start ?= document.createComment "for-item-start"
+            el2 = tmp._end ?= document.createComment "for-item-end"
+            next = getNext()
+            parent.insertBefore el, next
+            parent.insertBefore el2, next
           append = (tmp) ->
             unless tmp._appended
               tmp._appended = true 
               els = tmp._els
-              next = getNext()
-              tmp._end = next
+              end = tmp._end
               for el in els
-                parent.insertBefore(el, next)
+                parent.insertBefore(el, end)
           remove = (tmp) ->
             if tmp._appended
-              val._appended = false
+              tmp._appended = false
               els = tmp._els = []
               el = tmp._start.nextSibling
               end = tmp._end
@@ -71,7 +73,13 @@ module.exports =
             keyname = names[1] if names[1]
             for val, i in value by -1
               #val = clone(val)
-              if (tmp = objs[i])?
+              if id?
+                for obj, j in objs
+                  if i > j and obj? and val[id] == obj[valname][id]
+                    objs[j] = objs[i]
+                    tmp = objs[i] = obj
+                    break
+              if tmp? || (tmp = objs[i])?
                 if val != tmp[valname]
                   tmp[valname] = val
                 if keyname and key != tmp[keyname]
@@ -86,10 +94,14 @@ module.exports =
                 if keyname
                   tmp.$watch.path(parent:tmp, name: keyname, value: "", path: keyname)
                 addComputed(tmp)
-                appendComments(tmp)
                 tmp._els = getEls(tmp)
+              if tmp._last != i
+                remove(tmp)
+                appendComments(tmp)
               append(tmp)
-              last = i
+              tmp._last = i
+              last = tmp
+              tmp = null
             for val, i in objs
               unless value[i]
                 remove(val)
@@ -99,6 +111,12 @@ module.exports =
             keys = Object.keys(value)
             for key,i in keys by -1
               val = value[key]
+              if id?
+                for obj, j in objs
+                  if i > j and obj? and val[id] == obj[valname][id]
+                    objs[j] = objs[i]
+                    tmp = objs[i] = obj
+                    break
               if (tmp = objs[i])?
                 if val != tmp[valname]
                   tmp[valname] = val
@@ -114,10 +132,14 @@ module.exports =
                 if keyname
                   tmp.$watch.path(parent:tmp, name: keyname, value: key, path: keyname)
                 addComputed(tmp)
-                appendComments(tmp)
                 tmp._els = getEls(tmp)
+              if tmp._last != i
+                remove(tmp)
+                appendComments(tmp)
               append(tmp)
-              last = i
+              tmp._last = i
+              last = tmp
+              tmp = null
             for val in objs.slice(keys.length)
               remove(val)
       return objs
