@@ -1,9 +1,12 @@
-{isString} = require("./_helpers")
+{isString, isFunction} = require("./_helpers")
 module.exports =
   _name: "class"
   _v: 1
   _rebind: "$class"
-  _mergers: require("./_merger").copy(source: "initClass")
+  _mergers: [
+    require("./_merger").copy(source: "initClass")
+    require("./_merger").copy(source: "computedClass")
+  ]
   _attrLookup:
     class:
       "#": (o) ->  @$computed.orWatch o.value, (val) -> @$class.set o.el, val
@@ -31,12 +34,16 @@ module.exports =
           el = @
         @$class.setStr(el,@$class.objToStr(obj))
   connectedCallback: ->
-    if @_isFirstConnect and @initClass?
-      if isString(@initClass)
-        @$class.setStr @, @initClass
-      else
-        for k,v of @initClass
-          @$class.setStr k, v
+    if @_isFirstConnect
+      if (inc = @initClass)?
+        if isString(inc)
+          @$class.setStr @, inc
+        else
+          for k,v of inc
+            @$class.setStr k, v
+      if (cc = @computedClass)?
+        for el, c of cc
+          @$computed.parseAndInit c, cbs: ((el, val) -> @$class.set(el, val)).bind(@,el)
 test module.exports, (merge) ->
   describe "ceri", ->
     describe "class", ->

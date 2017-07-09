@@ -19,7 +19,7 @@ processStyle = (style, aniStyle, fac, preserve) ->
       transform.push "#{key}(#{tmp})"
   if transform.length > 0
     style.transform = transform.join " "
-procesPreserve = (style, preserve) ->
+processPreserve = (style, preserve) ->
   if preserve
     for key, val of preserve
       style[key] = val
@@ -27,6 +27,7 @@ step = (o) -> (timestamp) ->
   unless o.stopped
     s = o.el.style
     unless o.start?
+      o.el.__ceriAnimation = o
       if o._percent
         o.start = timestamp - o._percent * o.duration
       else
@@ -56,6 +57,11 @@ module.exports =
   _name: "animate"
   _v: 1
   methods:
+    $cancelLastandAnimate: (newO) ->
+      tmp = @$animations
+      if (i = tmp.length) > 0
+        newO = @$cancelAnimation(tmp[i-1], newO)
+      @$animate newO
     $cancelAnimation: (o,newO = {}) ->
       if o?.stop?
         return o.stop(newO)
@@ -88,9 +94,10 @@ module.exports =
           unless o.stopped
             o.stopped = true
             @$animations.splice @$animations.indexOf(o),1
+            o.el.__ceriAnimation = null
             if obj?
               if obj.reset
-                procesPreserve(o.el.style,o.preserve)
+                processPreserve(o.el.style,o.preserve)
               else
                 percent = Math.min(1,(performance.now() - o.start) / o.duration)
                 obj._preserve = o.preserve

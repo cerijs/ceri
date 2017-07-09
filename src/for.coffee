@@ -75,9 +75,10 @@ module.exports =
               #val = clone(val)
               if id?
                 for obj, j in objs
-                  if i > j and obj? and val[id] == obj[valname][id]
-                    objs[j] = objs[i]
-                    tmp = objs[i] = obj
+                  if obj? and val[id] == obj[valname][id]
+                    unless i == j
+                      objs[j] = objs[i]
+                      tmp = objs[i] = obj
                     break
               if tmp? || (tmp = objs[i])?
                 if val != tmp[valname]

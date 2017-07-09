@@ -54,8 +54,6 @@ module.exports =
         for el, s of ins
           @$style.set el, s
       if (cs = @computedStyle)?
-        if isFunction(cs)
-          cs = this: cs
         for el, c of cs
           @$computed.parseAndInit c, cbs: ((el, val) -> @$style.set(el, val)).bind(@,el)
 
