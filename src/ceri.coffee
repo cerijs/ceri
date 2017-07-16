@@ -66,6 +66,7 @@ module.exports = (ce) ->
 
     ## apply merging
     _merger.apply(ce,ceProto.mixins,mergers)
+    ceProto._registerTests?(ce)
   return ce
 
 test {_name:"ceri"}, (merge) ->

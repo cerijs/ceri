@@ -3,7 +3,6 @@ isObject = (obj) -> typeof obj == "object"
 isFunction = (obj) -> typeof obj == "function"
 isPlainObject = (obj) -> isObject(obj) && Object.prototype.toString.call(obj) == "[object Object]"
 concat = (arr1,arr2) -> Array.prototype.push.apply(arr1, arr2)
-h = /([^-])([A-Z])/g
 id = 0
 module.exports =
   getID: -> return id++
@@ -42,7 +41,7 @@ module.exports =
       obj? and obj.nodeType? == 1 and typeof obj.nodeName? == "string"
   camelize: (str) -> str.replace /-(\w)/g, (_, c) -> if c then c.toUpperCase() else ''
   capitalize: (str) -> str.charAt(0).toUpperCase() + str.slice(1)
-  hyphenate: (str) -> str.replace(h, '$1-$2').toLowerCase()
+  hyphenate: (str) -> str.replace(/([^-])([A-Z])/g, '$1-$2').toLowerCase()
   clone: (o) ->
     if isPlainObject(o)
       cln = {}
