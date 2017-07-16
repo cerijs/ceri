@@ -61,10 +61,12 @@ module.exports =
         else
           return null
       _fns = {}
+      
       if o.toggle
-          o.toggle = o.value unless isString(o.toggle)
-          obj = @$path.toNameAndParent(path:o.toggle)
-          cbs.push = -> obj.parent[obj.name] = !obj.parent[obj.name]
+        o.toggle = o.value unless isString(o.toggle)
+        obj = @$path.toNameAndParent(path:o.toggle)
+        cbs.push -> 
+          obj.parent[obj.name] = !obj.parent[obj.name]
       else
         for str in arrayize(o.cbs)
           if o.dyn and isString(str)
