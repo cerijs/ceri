@@ -11,7 +11,7 @@ module.exports =
       "#": (o) ->
         comment = document.createComment("#if")
         parent = o.el.parentElement
-        cb = => @$if value: o.value, anchor: comment, els: [o.el]
+        cb = => @$if value: o.value, anchor: comment, els: [o.el], not: o.not
         if parent
           parent.appendChild(comment)
           cb()

@@ -20,13 +20,14 @@ module.exports =
       __w: {}
 
       getObj: (o) ->
-        if o.path? and (obj = @$watch.__w[o.path])?
+        if o.path? and (obj = @$watch.__w[o.path] or @__parent?.$watch.__w[o.path])?
           return obj
         return null
 
       setObj: (o) ->
-        w = @$watch
-        w.__w[o.path] = w.sharedInit(o)
+        o = (w = @$watch).sharedInit(o)
+        w.__w[o.path] = o if o.path?
+        return o
 
       notify: (path) ->
         unless (o = @$watch.getObj(path:path))
@@ -152,6 +153,7 @@ module.exports =
         #cwarn !o.path?, "$watch.path requires path"
         @$path.toNameAndParent(o)
         @$watch.parse(o)
+        
         unless o.parent # save cbs for later
           if (obj = @$watch.getObj(o))? # watch obj already saved
             @$watch.merge(obj, o)
@@ -170,8 +172,8 @@ module.exports =
               unless (taints = o._taints)?
                 taints = o._taints = o.cDeps.reduce(((h, c) -> c.getTaints(h,true)
                 ), _taints: [])._taints
-              for taint in taints
-                taint()
+              for cb in taints.map((taint) => taint())
+                cb()
               for cb in o.cbs
                 cb.call(o.instance, val, oldVal, o)
               return
@@ -190,7 +192,7 @@ module.exports =
       processNewValue: (o) ->
         child = o.value
         parent = o.parent
-        isValidObj = (obj) -> isObject(obj) and not isArray(obj) and not obj?._isCeri
+        isValidObj = (obj) -> obj? and isObject(obj) and not isArray(obj) and not obj?._isCeri
           
         # wiring all cbs for all children
         if isValidObj(child)
@@ -214,7 +216,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "watch", ->
       el = el2 = null
-      spy = (id) -> spy[id] ?= chai.spy()
+      spy = (id) -> spy[id] ?= sinon.spy()
       sharedObj = nested: "test40"
       getWatchObj = (el, name) -> el.$watch.__w[name]
       before (done) ->
@@ -254,31 +256,31 @@ test module.exports, (merge) ->
         el.someArray[0].should.equal "test20"
         el.someObj.someNestedProp.should.equal "test30"
       it "should work with initial", ->
-        spy(1).should.not.have.been.called()
-        spy(2).should.have.been.called.with "test10"
-        spy(3).should.have.been.called.once()
-        spy(4).should.have.been.called.with "test"
-        spy(5).should.have.been.called.with "test30"
+        spy(1).should.not.have.been.called
+        spy(2).should.have.been.calledWith "test10"
+        spy(3).should.have.been.calledOnce
+        spy(4).should.have.been.calledWith "test"
+        spy(5).should.have.been.calledWith "test30"
       it "should notify on change", ->
         el.someData = "test2"
-        spy(1).should.have.been.called.with "test2", "test"
-        spy(4).should.have.been.called.with "test2", "test"
+        spy(1).should.have.been.calledWith "test2", "test"
+        spy(4).should.have.been.calledWith "test2", "test"
       it "should work with nested props", ->
         el.someObj.someNestedProp = "test31"
-        spy(5).should.have.been.called.with "test31","test30"
+        spy(5).should.have.been.calledWith "test31","test30"
       it "should work with nested shared objs", ->
         spy(6).reset()
         spy(7).reset()
         el.sharedObj.nested = "test41"
         el2.sharedObj.nested.should.equal "test41"
-        spy(6).should.have.been.called.with "test41","test40"
-        spy(7).should.have.been.called.with "test41","test40"
+        spy(6).should.have.been.calledWith "test41","test40"
+        spy(7).should.have.been.calledWith "test41","test40"
       it "should work with shared objs", ->
         spy(6).reset()
         spy(7).reset()
         el.sharedObj = nested: "test42"
-        spy(6).should.have.been.called.twice()
-        spy(7).should.not.have.been.called()
+        spy(6).should.have.been.calledTwice
+        spy(7).should.not.have.been.called
       
       
       after -> el.remove()

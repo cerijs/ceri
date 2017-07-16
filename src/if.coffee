@@ -3,22 +3,22 @@ module.exports =
   _name: "if"
   _v: 1
   methods: 
-    $if: ({anchor, els, template, value, elseTemplate}) ->
-      cerror(!value,"no value provided for $if") 
-      if isFunction(els)
-        template = els
-      if template
-        els = null
+    $if: (o) ->
+      cerror(!o.value,"no value provided for $if") 
+      template = if isFunction(o.els) then o.els  else o.template
+      elseTemplate = o.elseTemplate
+      els = if template then null else o.els
       append = (els) ->
-        parent = anchor.parentElement
+        parent = o.anchor.parentElement
         for el in els
           if el.parentElement != parent
-            parent.insertBefore el, anchor
+            parent.insertBefore el, o.anchor
       remove = (els) ->
         for el in els
           el.remove()
       els2 = null
-      @$computed.orWatch value, (value, oldVal) ->
+      @$computed.orWatch o.value, (value, oldVal) ->
+        value = !value != !o.not
         if value
           if template?
             els = @$path.resolveValue(template).call(@)

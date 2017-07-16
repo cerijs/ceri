@@ -4,7 +4,7 @@ module.exports = (config) ->
   config.set
     preprocessors: "test/*.coffee": ["webpack"]
     webpack:
-      devtool: 'cheap-module-eval-source-map'
+      devtool: 'source-map'
       resolve:
         extensions: [".js",".coffee"]
       module:
@@ -21,16 +21,16 @@ module.exports = (config) ->
         new webpack.DefinePlugin "process.env.NODE_ENV": JSON.stringify('test')
       ]
     files: [{pattern: "test/index.coffee", watched: false}]
-    frameworks: ["mocha","chai-dom","chai-spies","chai","ceri"]
+    frameworks: ["mocha","chai-dom","sinon-chai","ceri"]
     plugins: [
       require("./test/ceri")
-      require("karma-chai")
+      require("karma-sinon-chai")
       require("karma-chai-dom")
       require("karma-chrome-launcher")
       require("karma-firefox-launcher")
       require("karma-mocha")
       require("karma-webpack")
-      require("karma-chai-spies")
+
     ]
     browsers: ["Chromium","Firefox"]
     client:

@@ -48,10 +48,10 @@ module.exports =
           if splitted.length > 1
             fn = @$path.resolveValue(splitted.shift())
             return (e) ->
-              tmp = splitted.map (path) =>
+              tmp = splitted[0].split(",").map (path) =>
                 newPath = path.replace(/[\"']/g,"")
                 return newPath if newPath != path
-                @$path.resolveValue(path)
+                return @$path.resolveValue(path)
               tmp.push e
               fn.apply(@,tmp)
           else
@@ -61,71 +61,78 @@ module.exports =
         else
           return null
       _fns = {}
-      for str in arrayize(o.cbs)
-        if o.dyn and isString(str)
-          @$computed.orWatch str, (str2, oldStr) ->
-            if (oldFn = _fns[oldStr])? 
-              delete _fns[oldStr]
-              oldStr = oldFn
-            if ~(index = cbs.indexOf(oldStr))
-              cbs.splice index, 1
-            if (fn = strToFn(str2))?
-              cbs.push fn
-              if fn != str2
-                _fns[str2] = fn
-        else
-          cbs.push strToFn(str)
+      if o.toggle
+          o.toggle = o.value unless isString(o.toggle)
+          obj = @$path.toNameAndParent(path:o.toggle)
+          cbs.push = -> obj.parent[obj.name] = !obj.parent[obj.name]
+      else
+        for str in arrayize(o.cbs)
+          if o.dyn and isString(str)
+            @$computed.orWatch str, (str2, oldStr) ->
+              if (oldFn = _fns[oldStr])? 
+                delete _fns[oldStr]
+                oldStr = oldFn
+              if ~(index = cbs.indexOf(oldStr))
+                cbs.splice index, 1
+              if (fn = strToFn(str2))?
+                cbs.push fn
+                if fn != str2
+                  _fns[str2] = fn
+          else
+            cbs.push fn if (fn = strToFn(str))?
       o._cbs = cbs
+      o.cb = (el, e) ->
+        return if o.self and e.target != el
+        return if o.notPrevented and e.defaultPrevented
+        return if o.keyCode and not ~o.keyCode.indexOf(e.keyCode)
+        if o.outside and e.target?
+          target = e.target
+          while target?
+            if target == @
+              return
+            target = target.parentElement
+        if o.inside and e.target?
+          target = e.target
+          isInside = false
+          while target?
+            if target == el
+              isInside = true
+              break
+            target = target.parentElement
+          return unless isInside
+        if o.defer?.delay
+          if o.defer.canceled
+            clearTimeout o.defer.timeout
+            o.defer.canceled = false
+          delay = (isString(o.defer.delay) and @$path.getValue(o.defer.delay)) or o.defer.delay
+          if delay > 1
+            if o.defer.cancel
+              o.defer.canceler = []
+              for ev in arrayize(o.defer.cancel)
+                o.defer.canceler.push @$once el:o.el, event: ev, cbs: ->
+                  o.defer.canceled = true
+            o.defer.timeout = setTimeout (=>
+              if o.defer.canceler
+                for deactivate in o.defer.canceler
+                  deactivate()
+                o.defer.canceler = null
+              unless o.defer.canceled
+                for ocb in o._cbs
+                  ocb.call @, e
+              o.defer.canceled = false
+              ), delay
+        else
+          for ocb in o._cbs
+            ocb.call @, e
+        e.preventDefault() if o.prevent
+        e.stopPropagation() if o.stop
+        o.deactivate() if o.once
       if @_evLookup[o.event]?
         o = @_evLookup[o.event].call(@,o)
       else
-        if o.toggle
-          o.toggle = o.value unless isString(o.toggle)
-          obj = @$path.toNameAndParent(path:o.toggle)
-          cb = ->
-            obj.parent[obj.name] = !obj.parent[obj.name]
-        else
-          cb = (el, e) ->
-            return if o.self and e.target != el
-            return if o.notPrevented and e.defaultPrevented
-            return if o.keyCode and not ~o.keyCode.indexOf(e.keyCode)
-            if o.outside
-              target = e.target
-              while target?
-                if target == @
-                  return
-                target = target.parentElement
-            if o.defer?.delay
-              if o.defer.canceled
-                clearTimeout o.defer.timeout
-                o.defer.canceled = false
-              delay = (isString(o.defer.delay) and @$path.getValue(o.defer.delay)) or o.defer.delay
-              if delay > 1
-                if o.defer.cancel
-                  o.defer.canceler = []
-                  for ev in arrayize(o.defer.cancel)
-                    o.defer.canceler.push @$once el:o.el, event: ev, cbs: ->
-                      o.defer.canceled = true
-                o.defer.timeout = setTimeout (=>
-                  if o.defer.canceler
-                    for deactivate in o.defer.canceler
-                      deactivate()
-                    o.defer.canceler = null
-                  unless o.defer.canceled
-                    for ocb in o._cbs
-                      ocb.call @, e
-                  o.defer.canceled = false
-                  ), delay
-            else
-              for ocb in o._cbs
-                ocb.call @, e
-            e.preventDefault() if o.prevent
-            e.stopPropagation() if o.stop
-            o.deactivate() if o.once
-        
         o.activate = ->
           el = @$parseElement.byString(o.el)
-          _cb = cb.bind(@,el)
+          _cb = o.cb.bind(@,el)
           if o.throttled
             return o.deactivate = throttled(el, o.event, _cb)
           else
@@ -158,7 +165,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "events", ->
       el = null
-      spy = chai.spy()
+      spy = sinon.spy()
       before (done) ->
         el = makeEl merge 
           events:
@@ -167,4 +174,4 @@ test module.exports, (merge) ->
       after -> el.remove()
       it "should work", ->
         el.$emit name: "someEvent", detail: "test"
-        spy.should.have.been.called.with "test"
+        spy.should.have.been.calledWith "test"

@@ -11,6 +11,7 @@ module.exports =
       "#": (o) ->
         @$style.set o.el, display: "none"
         @$computed.orWatch o.value, (value, oldVal) ->
+          value = !value != !o.not
           style = display: if value then null else "none"
           if value and o.delay
             @$nextTick -> @$style.set o.el, style

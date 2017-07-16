@@ -122,7 +122,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "open", ->
       el = null
-      spy = chai.spy()
+      spy = sinon.spy()
       before (done) ->
         el = makeEl merge {}
         el.$nextTick done

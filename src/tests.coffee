@@ -20,14 +20,14 @@ test module.exports, (merge) ->
     describe "tests", ->
       el = null
       obj = null
-      spy = chai.spy()
+      spy = sinon.spy()
       before -> obj = merge {tests: spy}
       after -> el?.remove()
       it "should put the object to test1", ->
         window.ceri.tests[0].should.equal obj
       it "should call tests once on dom", (done) ->
-        spy.should.not.have.been.called()
+        spy.should.not.have.been.called
         el = makeEl(obj)
         el.$nextTick ->
-          spy.should.have.been.called.with el
+          spy.should.have.been.calledWith el
           done()

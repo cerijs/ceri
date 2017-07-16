@@ -1,4 +1,4 @@
-{isString} = require("./_helpers")
+{isString, isArray, isFunction} = require("./_helpers")
 splittedToObjects = (splitted, obj) ->
 
   return splitted.reduce ((arr, name, i) ->
@@ -21,11 +21,12 @@ module.exports =
             o.value = splittedToObjects(o.path.split("."), o.obj).pop()
         return o
       getValue: (path) -> @$path.toValue(path:path).value
+      
       resolveValue: (val) ->
         if isString(val)
-          return @$path.getValue(val)
-        else
-          return val
+          val = @$path.getValue((tmp = val))
+          val = @ if not val? and (tmp == "this" or tmp == "@")
+        return val
       resolveMultiple: (o, arr) ->
         for str in arr
           o[str] = @$path.resolveValue(o[str]) if o[str]

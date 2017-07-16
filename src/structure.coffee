@@ -2,7 +2,7 @@
 module.exports =
   _name: "structure"
   _v: 1
-  _prio: 900
+  _prio: 800
   _mergers: [
     require("./_merger").copy(source: "_elLookup")
     ]
@@ -66,7 +66,7 @@ test module.exports, (merge) ->
   describe "ceri", ->
     describe "structure", ->
       el = null
-      spy = chai.spy()
+      spy = sinon.spy()
       before ->
         el = makeEl merge({
           structure: template(1,"""

@@ -1,9 +1,7 @@
-{noop} = require("./_helpers")
 cbs = []
 window.onpopstate = (e) ->
   for o in cbs
-    for cb in o._cbs
-      cb.call(o.this,e)
+    o.cb.call(o.this,window,e)
 
 module.exports =
   _name: "@popstate"

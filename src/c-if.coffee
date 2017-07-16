@@ -17,6 +17,7 @@ module.exports =
             els: children
             template: o.template?[""]
             elseTemplate: o.else?[""]
+            not: o.not?[""]
       return comment
 
 

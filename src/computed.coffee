@@ -13,6 +13,8 @@ module.exports =
   methods:
     $computed:
       init: (o) ->
+        if o.parentPath? and o.name?
+          o.path = o.parentPath + "." + o.name
         unless o.path # create anonymous computed value
           o.id = getID()
           o.path = "__computed."+o.id
@@ -60,15 +62,16 @@ module.exports =
           o.instance = @
           o.taint = ->
             o.dirty = true
-            if o.cbs.length > 0
-              instance = o.instance
-              oldVal = o.value
-              newVal = o.parent[o.name]
-              for cb in o.cbs
-                cb.call(instance, newVal, oldVal, o)
+            return ->
+              if o.cbs.length > 0
+                instance = o.instance
+                oldVal = o.value
+                newVal = o.parent[o.name]
+                for cb in o.cbs
+                  cb.call(instance, newVal, oldVal, o)
           o.taint.id = o.id
           o.notify = ->
-            for cb in o.getTaints()
+            for cb in o.getTaints().map((taint) => taint())
               cb()
           o.notify.owner = o
           if o.set?
@@ -149,8 +152,8 @@ module.exports =
     for deferred in arr
       deferred.call(@)
 test module.exports, (merge) ->
-  spy = chai.spy()
-  spy2 = chai.spy()
+  spy = sinon.spy()
+  spy2 = sinon.spy()
   obj = merge {
     mixins: [require("./util")]
     data: -> someData: "test"
@@ -177,10 +180,10 @@ test module.exports, (merge) ->
       it "should compute", ->
         el.someData2.should.equal "test"
       it "should call spy on change", ->
-        spy.should.have.been.called.once()
+        spy.should.have.been.calledOnce
         el.someData = "test2"
-        spy.should.have.been.called.with "test2", "test"
-        spy2.should.have.been.called.with "test2", "test"
+        spy.should.have.been.calledWith "test2", "test"
+        spy2.should.have.been.calledWith "test2", "test"
         el.someData2.should.equal "test2"
       it "should work with computed dependecies", ->
         el.someData = "test3"
