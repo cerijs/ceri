@@ -30,37 +30,31 @@ module.exports =
           return [(val) -> @$style.setNormalized el, val]
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "styles", ->
-      el = null
-      before (done) ->
-        el = makeEl merge 
-          mixins: [
-            require("./structure")
-            require("./props")
-          ]
-          structure: template(1,"""
-            <div #ref="someDiv"></div>
-            """)
-          data: -> width: "10px"
-          prop:
-            style2:
-              type: String
-          styles:
-            this:
-              computed: -> width: @width
-              data: -> height: "10px"
-              prop: "style2"
-            someDiv:
-              data: -> height: "20px"
-        setTimeout done, 100
-      after -> el.remove()
-      it "should work", (done) ->
-        el.should.have.attr "style", "width: 10px; height: 10px;"
-        el.someDiv.should.have.attr "style", "height: 20px;"
-        el.$nextTick ->
-          el.style2 = "position: absolute"
-          el.styles.this.height = "20px"
-          el.should.have.attr "style", "width: 10px; height: 20px; position: absolute;"
-          done()
+test module.exports, {
+  mixins: [
+    require("./structure")
+    require("./props")
+  ]
+  structure: template(1,"""
+    <div #ref="someDiv"></div>
+    """)
+  data: -> width: "10px"
+  prop:
+    style2:
+      type: String
+  styles:
+    this:
+      computed: -> width: @width
+      data: -> height: "10px"
+      prop: "style2"
+    someDiv:
+      data: -> height: "20px"
+}, (el) ->
+  it "should work", (done) ->
+    el.should.have.attr "style", "width: 10px; height: 10px;"
+    el.someDiv.should.have.attr "style", "height: 20px;"
+    el.$nextTick ->
+      el.style2 = "position: absolute"
+      el.styles.this.height = "20px"
+      el.should.have.attr "style", "width: 10px; height: 20px; position: absolute;"
+      done()

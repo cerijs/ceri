@@ -78,11 +78,5 @@ module.exports =
           
               
         
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "sorted", ->
-      el = null
-      before (done) ->
-        el = makeEl merge {}
-        el.$nextTick done
-      after -> el.remove()
+test module.exports, {}, (el) ->
+  it "should work", ->

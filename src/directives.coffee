@@ -1,4 +1,4 @@
-{isString,clone} = require("./_helpers")
+{isString,clone,camelize} = require("./_helpers")
 module.exports =
   _name: "directives"
   _v: 1
@@ -29,7 +29,7 @@ module.exports =
         #cwarn(!lookupObj[o.type]?, o.type, o.name," found, but not expected")
       switch o.type 
         when "$"
-          cb = ((el,name,val) -> el[name] = val).bind(@,o.el,o.name)
+          cb = ((el,name,val) -> el[name] = val).bind(@,o.el,camelize(o.name))
           @$computed.orWatch o.value, [cb]
         when ":"
           cb = @$setAttribute.bind(@,o.el,o.name)
@@ -68,11 +68,5 @@ module.exports =
           
               
         
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "directives", ->
-      el = null
-      before (done) ->
-        el = makeEl merge {}
-        el.$nextTick done
-      after -> el.remove()
+test module.exports, {}, (el) ->
+  it "should work", ->

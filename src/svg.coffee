@@ -49,14 +49,9 @@ module.exports =
     require "./structure"
   ]
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "svg", ->
-      el = null
-      before (done) ->
-        el = makeEl merge structure: template 1, """<svg test></svg>"""
-        el.$nextTick done
-      after -> el.remove()
-      it "should have svg element", ->
-        el.should.contain "svg[test]"
-        el.children[0].namespaceURI.should.equal "http://www.w3.org/2000/svg"
+test module.exports, {
+  structure: template 1, """<svg test></svg>"""
+}, (el) ->
+  it "should have svg element", ->
+    el.should.contain "svg[test]"
+    el.children[0].namespaceURI.should.equal "http://www.w3.org/2000/svg"

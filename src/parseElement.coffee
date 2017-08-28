@@ -9,6 +9,8 @@ module.exports =
       byString: (el) ->
         if isString(el) 
           ell = if el == "this" then @ else @[el]
+          unless ell?
+            ell = document.querySelector(el)
           cerror !ell?, "element ",el," not found"
           return ell
         else if el?
@@ -16,12 +18,5 @@ module.exports =
         else
           return @
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "parseElement", ->
-      el = null
-      before (done) ->
-        el = makeEl merge {}
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
+test module.exports, {}, (el) ->
+  it "should work", ->

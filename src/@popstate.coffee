@@ -6,6 +6,9 @@ window.onpopstate = (e) ->
 module.exports =
   _name: "@popstate"
   _v: 1
+  mixins: [
+    require "./events"
+  ]
   _evLookup: 
     popstate: (o) ->
       o.this = @

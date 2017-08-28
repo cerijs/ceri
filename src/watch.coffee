@@ -99,9 +99,10 @@ module.exports =
           o.id = getID()
           o.instance = @
           o.checkComputed = ->
-            if (not (cai = window.__ceriActiveInstance)? or cai == o.instance or cai.__parent == o.instance) and 
-                ((cd = window.__ceriDeps)? and not cd[o.id]?)
-              o.cDeps.push (cd(o))
+            if (cd = window.__ceriDeps)? and not cd[o.id]? and (
+                (cai = window.__ceriActiveInstance) == null or
+                ((ins = o.instance) == cai or (cai.__parents? and ~cai.__parents.indexOf(ins))))
+              o.cDeps.push(cd(o))
               o.nullTaints()
         return o
       setupParent: (o) ->
@@ -213,74 +214,72 @@ module.exports =
 
 
 test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "watch", ->
-      el = el2 = null
-      spy = (id) -> spy[id] ?= sinon.spy()
-      sharedObj = nested: "test40"
-      getWatchObj = (el, name) -> el.$watch.__w[name]
-      before (done) ->
-        el = makeEl merge 
-          data: ->
-            someData: "test"
-            someData2: "test10"
-            someArray: ["test20"]
-            someObj:
-              someNestedProp: "test30"
-            sharedObj: sharedObj
-          watch:
-            someData:
-              initial: false 
-              cbs: spy(1)
-            someData2:  spy(2)
-            someArray: spy(3)
-            "someObj.someNestedProp": spy(5)
-            sharedObj: spy(6)
-            "sharedObj.nested": spy(6)
-          created: ->
-            @$watch.path path:"someData", cbs: spy(4)
-        el2 = makeEl merge
-          data: ->
-            sharedObj: sharedObj
-          watch:
-            sharedObj: spy(7)
-            "sharedObj.nested": spy(7)
-        el.$nextTick done
-      after -> 
-        el.remove()
-        el2.remove()
-      it "should create data", ->
-        should.exist el.someData
-        el.someData.should.equal "test"
-        el.someData2.should.equal "test10"
-        el.someArray[0].should.equal "test20"
-        el.someObj.someNestedProp.should.equal "test30"
-      it "should work with initial", ->
-        spy(1).should.not.have.been.called
-        spy(2).should.have.been.calledWith "test10"
-        spy(3).should.have.been.calledOnce
-        spy(4).should.have.been.calledWith "test"
-        spy(5).should.have.been.calledWith "test30"
-      it "should notify on change", ->
-        el.someData = "test2"
-        spy(1).should.have.been.calledWith "test2", "test"
-        spy(4).should.have.been.calledWith "test2", "test"
-      it "should work with nested props", ->
-        el.someObj.someNestedProp = "test31"
-        spy(5).should.have.been.calledWith "test31","test30"
-      it "should work with nested shared objs", ->
-        spy(6).reset()
-        spy(7).reset()
-        el.sharedObj.nested = "test41"
-        el2.sharedObj.nested.should.equal "test41"
-        spy(6).should.have.been.calledWith "test41","test40"
-        spy(7).should.have.been.calledWith "test41","test40"
-      it "should work with shared objs", ->
-        spy(6).reset()
-        spy(7).reset()
-        el.sharedObj = nested: "test42"
-        spy(6).should.have.been.calledTwice
-        spy(7).should.not.have.been.called
-      
-      
-      after -> el.remove()
+  el = el2 = null
+  spy = (id) -> spy[id] ?= sinon.spy()
+  sharedObj = nested: "test40"
+  getWatchObj = (el, name) -> el.$watch.__w[name]
+  before (done) ->
+    el = makeEl merge 
+      data: ->
+        someData: "test"
+        someData2: "test10"
+        someArray: ["test20"]
+        someObj:
+          someNestedProp: "test30"
+        sharedObj: sharedObj
+      watch:
+        someData:
+          initial: false 
+          cbs: spy(1)
+        someData2:  spy(2)
+        someArray: spy(3)
+        "someObj.someNestedProp": spy(5)
+        sharedObj: spy(6)
+        "sharedObj.nested": spy(6)
+      created: ->
+        @$watch.path path:"someData", cbs: spy(4)
+    el2 = makeEl merge
+      data: ->
+        sharedObj: sharedObj
+      watch:
+        sharedObj: spy(7)
+        "sharedObj.nested": spy(7)
+    el.$nextTick done
+  after -> 
+    el.remove()
+    el2.remove()
+  it "should create data", ->
+    should.exist el.someData
+    el.someData.should.equal "test"
+    el.someData2.should.equal "test10"
+    el.someArray[0].should.equal "test20"
+    el.someObj.someNestedProp.should.equal "test30"
+  it "should work with initial", ->
+    spy(1).should.not.have.been.called
+    spy(2).should.have.been.calledWith "test10"
+    spy(3).should.have.been.calledOnce
+    spy(4).should.have.been.calledWith "test"
+    spy(5).should.have.been.calledWith "test30"
+  it "should notify on change", ->
+    el.someData = "test2"
+    spy(1).should.have.been.calledWith "test2", "test"
+    spy(4).should.have.been.calledWith "test2", "test"
+  it "should work with nested props", ->
+    el.someObj.someNestedProp = "test31"
+    spy(5).should.have.been.calledWith "test31","test30"
+  it "should work with nested shared objs", ->
+    spy(6).reset()
+    spy(7).reset()
+    el.sharedObj.nested = "test41"
+    el2.sharedObj.nested.should.equal "test41"
+    spy(6).should.have.been.calledWith "test41","test40"
+    spy(7).should.have.been.calledWith "test41","test40"
+  it "should work with shared objs", ->
+    spy(6).reset()
+    spy(7).reset()
+    el.sharedObj = nested: "test42"
+    spy(6).should.have.been.calledTwice
+    spy(7).should.not.have.been.called
+  
+
+

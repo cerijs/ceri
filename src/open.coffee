@@ -118,13 +118,5 @@ module.exports =
   disconnectedCallback: ->
     if @isOpen
       @toggle(false)
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "open", ->
-      el = null
-      spy = sinon.spy()
-      before (done) ->
-        el = makeEl merge {}
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
+test module.exports, {}, (el) ->
+  it "should work", ->

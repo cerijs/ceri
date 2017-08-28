@@ -63,31 +63,29 @@ module.exports =
       @$structure = null
 
 test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "structure", ->
-      el = null
-      spy = sinon.spy()
-      before ->
-        el = makeEl merge({
-          structure: template(1,"""
-            <div #ref="someDiv" @click="onClick" :text="someText" :bind="someBind" attr="someAttr">
-              <slot>
-              </slot>
-            </div>
-            """)
-          methods:
-            onClick: spy
-          data: ->
-            someText: "textContent"
-            someBind: "bindContent"
-        }),false
-        el.appendChild(document.createElement "div")
-      after -> el.remove()
-      it "should not work until attached", ->
-        should.not.exist el.someDiv
-      it "should have the right structure once on dom", (done) ->
-        document.body.appendChild el
-        el.$nextTick ->
-          el.should.have.html "<div bind=\"bindContent\" attr=\"someAttr\">textContent<div></div></div>"
-          done()
+  el = null
+  spy = sinon.spy()
+  before ->
+    el = makeEl merge({
+      structure: template(1,"""
+        <div #ref="someDiv" @click="onClick" :text="someText" :bind="someBind" attr="someAttr">
+          <slot>
+          </slot>
+        </div>
+        """)
+      methods:
+        onClick: spy
+      data: ->
+        someText: "textContent"
+        someBind: "bindContent"
+    }),false
+    el.appendChild(document.createElement "div")
+  after -> el.remove()
+  it "should not work until attached", ->
+    should.not.exist el.someDiv
+  it "should have the right structure once on dom", (done) ->
+    document.body.appendChild el
+    el.$nextTick ->
+      el.should.have.html "<div bind=\"bindContent\" attr=\"someAttr\">textContent<div></div></div>"
+      done()
         

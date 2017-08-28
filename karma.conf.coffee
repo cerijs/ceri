@@ -2,9 +2,9 @@ webpack = require "webpack"
 path = require "path"
 module.exports = (config) ->
   config.set
-    preprocessors: "test/*.coffee": ["webpack"]
+    preprocessors: "test/*.coffee": ["webpack", "sourcemap"]
     webpack:
-      devtool: 'source-map'
+      devtool: 'inline-source-map'
       resolve:
         extensions: [".js",".coffee"]
       module:
@@ -19,6 +19,9 @@ module.exports = (config) ->
         ]
       plugins: [
         new webpack.DefinePlugin "process.env.NODE_ENV": JSON.stringify('test')
+        new webpack.SourceMapDevToolPlugin
+          filename: null
+          test: /\.coffee($|\?)/i
       ]
     files: [{pattern: "test/index.coffee", watched: false}]
     frameworks: ["mocha","chai-dom","sinon-chai","ceri"]
@@ -30,7 +33,7 @@ module.exports = (config) ->
       require("karma-firefox-launcher")
       require("karma-mocha")
       require("karma-webpack")
-
+      require("karma-sourcemap-loader")
     ]
     browsers: ["Chromium","Firefox"]
     client:

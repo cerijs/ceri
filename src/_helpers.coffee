@@ -54,7 +54,7 @@ module.exports =
       return o
   rebind: (o) ->
     proto = Object.getPrototypeOf(o)
-    unless o.hasOwnProperty("_isCeri")
+    while not proto.hasOwnProperty("_isCeriProto")
       proto = Object.getPrototypeOf(proto)
     for key in o._rebind
       unless o.hasOwnProperty(key)
@@ -75,14 +75,12 @@ module.exports =
             o2[k] = v
 
 test {_name:"_helpers"}, ->
-  describe "ceri", ->
-    describe "_helpers", ->
-      it "should camelize", ->
-        module.exports.camelize "test-test-test"
-        .should.equal "testTestTest"
-      it "should capitalize", ->
-        module.exports.capitalize "testtesttest"
-        .should.equal "Testtesttest"
-      it "should hyphenate", ->
-        module.exports.hyphenate "testTestTest"
-        .should.equal "test-test-test"
+  it "should camelize", ->
+    module.exports.camelize "test-test-test"
+    .should.equal "testTestTest"
+  it "should capitalize", ->
+    module.exports.capitalize "testtesttest"
+    .should.equal "Testtesttest"
+  it "should hyphenate", ->
+    module.exports.hyphenate "testTestTest"
+    .should.equal "test-test-test"

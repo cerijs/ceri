@@ -42,26 +42,22 @@ module.exports =
         o.parent = splittedToObjects(splitted, o.obj).pop()
         return o
 
-test module.exports, (merge) ->
+test module.exports, {
+  methods:some:nested:path:"test"
+}, (el) ->
   path = "some.nested.path"
-  describe "ceri", ->
-    describe "path", ->
-      el = null
-      before ->
-        el = makeEl(merge({methods:some:nested:path:"test"}))
-      after -> el.remove()
-      it "should convert path to name and parent", ->
-        obj = el.$path.toNameAndParent({path:path})
-        obj.name.should.equal "path"
-        obj.parent.should.equal el.some.nested
-      it "should convert path to value", ->
-        obj = el.$path.toValue({path:path})
-        obj.value.should.equal el.some.nested.path
-      it "should set value by path", ->
-        obj = el.$path.setValue({path:path,value:"test2"})
-        el.some.nested.path.should.equal "test2"
-      it "should convert parent and name to value", ->
-        obj = el.$path.toNameAndParent({path:path})
-        delete obj.path
-        obj = el.$path.toValue(obj)
-        obj.value.should.equal el.some.nested.path
+  it "should convert path to name and parent", ->
+    obj = el.$path.toNameAndParent({path:path})
+    obj.name.should.equal "path"
+    obj.parent.should.equal el.some.nested
+  it "should convert path to value", ->
+    obj = el.$path.toValue({path:path})
+    obj.value.should.equal el.some.nested.path
+  it "should set value by path", ->
+    obj = el.$path.setValue({path:path,value:"test2"})
+    el.some.nested.path.should.equal "test2"
+  it "should convert parent and name to value", ->
+    obj = el.$path.toNameAndParent({path:path})
+    delete obj.path
+    obj = el.$path.toValue(obj)
+    obj.value.should.equal el.some.nested.path

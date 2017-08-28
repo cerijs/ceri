@@ -17,30 +17,23 @@ module.exports =
         el.removeAttribute name
       return then: @$nextTick
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "$setAttribute", ->
-      el = null
-      before (done) ->
-        el = makeEl merge {}
-        el.$nextTick done
-      after -> el.remove()
-      it "should set boolean", (done) ->
-        el.$setAttribute "test", true
+test module.exports, {}, (el) ->
+  it "should set boolean", (done) ->
+    el.$setAttribute "test", true
+    .then ->
+      el.should.have.attr "test", ""
+      el.$setAttribute "test", false
+      .then ->
+        el.should.not.have.attr "test"
+        done()
+  it "should set strings", (done) ->
+    el.$setAttribute "test", "test"
+    .then ->
+      el.should.have.attr "test","test"
+      el.$setAttribute "test", ""
+      .then ->
+        el.should.have.attr "test", ""
+        el.$setAttribute "test", null
         .then ->
-          el.should.have.attr "test", ""
-          el.$setAttribute "test", false
-          .then ->
-            el.should.not.have.attr "test"
-            done()
-      it "should set strings", (done) ->
-        el.$setAttribute "test", "test"
-        .then ->
-          el.should.have.attr "test","test"
-          el.$setAttribute "test", ""
-          .then ->
-            el.should.have.attr "test", ""
-            el.$setAttribute "test", null
-            .then ->
-              el.should.not.have.attr "test"
-              done()
+          el.should.not.have.attr "test"
+          done()

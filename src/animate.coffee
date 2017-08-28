@@ -128,11 +128,5 @@ module.exports =
     for ani in @$animations
       ani.stop()
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "animate", ->
-      el = null
-      before ->
-        el = makeEl merge {}
-      after -> el.remove()
-      it "should work", ->
+test module.exports, {}, (el) ->
+  it "should work", ->

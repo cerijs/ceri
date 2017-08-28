@@ -32,7 +32,8 @@ end = (o, e) ->
 
 
 module.exports =
-
+  _name: "draghandle"
+  _v: 1
   mixins:[
     require("./events")
     require("./parseElement")
@@ -65,3 +66,6 @@ module.exports =
         v = clone(v)
         v.el ?= k
         @$draghandle(v)
+
+test module.exports, {}, (el) ->
+  it "should work", ->

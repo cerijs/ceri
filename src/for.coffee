@@ -1,43 +1,40 @@
-{isObject, isString, isArray, noop, clone} = require("./_helpers")
+{isObject, isFunction, isString, isArray, noop, clone} = require("./_helpers")
 
 module.exports =
   _name: "for"
   _v: 1
   mixins:[
-    require("./computed")
+    require("./parseFunction")
   ]
   methods: 
     $for: ({anchor, template, names, value, computed, id}) ->
-      cerror !names or !isArray(names), "$for called without array of names"
-      cerror !value, "$for called without iteratable"
+      #cerror !names or !isArray(names), "$for called without array of names"
+      #cerror !value, "$for called without iteratable"
       tmpl = null
-      if isString(template)
-        @$watch.path path: template, cbs: (fn) ->
-          tmpl = fn
-          if objs
-            for obj in objs
-              oldEls = obj._els
-              if fn
-                newEls = obj._els = fn.call(obj)
-                for el in newEls
-                  o.el.insertBefore(el, oldEls[0])
-              else
-                obj._els = []
-              for el in oldEls
-                el.remove()
-      else
-        tmpl = template
-      getEls = (obj) -> if tmpl then tmpl.call(obj) else []
+      templateWatcher = @$parseFunction template, (fn) ->
+        tmpl = fn
+        if objs
+          for obj in objs
+            oldEls = obj._els
+            if fn? and isFunction(fn)
+              newEls = obj._els = fn.call(obj)
+              for el in newEls
+                o.el.insertBefore(el, oldEls[0])
+            else
+              obj._els = []
+            for el in oldEls
+              el.remove()
+      getEls = (obj) -> if tmpl? and isFunction(tmpl) then tmpl.call(obj) else []
       
       objs = []
-      valname = names.shift()
+      valname = names[0]
       if computed?
         _computed = @$path.resolveValue(computed)
         addComputed = (obj) ->
           obj.$computed.setup(_computed)
       else
         addComputed = noop
-      c = @$computed.orWatch value, (value) ->
+      process = (value) ->
         if value?
           last = null
           parent = anchor.parentElement
@@ -69,8 +66,8 @@ module.exports =
                 els.push tmpel
                 tmpel.remove()
           if isArray(value)
-            indexname = names[0] if names[0]
-            keyname = names[1] if names[1]
+            indexname = names[1] if names[1]
+            keyname = names[2] if names[2]
             for val, i in value by -1
               #val = clone(val)
               if id?
@@ -104,11 +101,11 @@ module.exports =
               last = tmp
               tmp = null
             for val, i in objs
-              unless value[i]
+              unless value[i]?
                 remove(val)
           else
-            indexname = names[1] if names[1]
-            keyname = names[0] if names[0]
+            indexname = names[2] if names[2]
+            keyname = names[1] if names[1]
             keys = Object.keys(value)
             for key,i in keys by -1
               val = value[key]
@@ -143,33 +140,30 @@ module.exports =
               tmp = null
             for val in objs.slice(keys.length)
               remove(val)
-      return objs
+          return value
+      if value != true
+        c = @$computed.orWatch value, process
+      return scopes: objs, valueWatcher: c, process: process.bind(@), templateWatcher: templateWatcher
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "for", ->
-      el = null
-      before (done) -> 
-        el = makeEl merge
-          mixins: [ require("./structure") ]
-          structure: template(1,"""
-            <div #ref=anchor></div>
-            """)
-          data: ->
-            test: ["1","2"]
-            template: template 1,"""<p :text=value></p>"""
-            template2: template 1,"""<p :text.expr=@value+@key+@index></p>"""
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", (done) ->
-        el.$for anchor:el.anchor, template:"template", names:["value"], value: "test"
-        el.should.have.text "12"
-        el.test = 1:2, 3:4
-        el.should.have.text "24"
-        el.template = -> []
-        el.should.have.text ""
-        el.$for anchor:el.anchor, template:"template2", names:["value","key","index"], value: "test"
-        el.$nextTick ->
-          el.should.have.text "210431"
-          done()
+test module.exports, {
+  mixins: [ require("./structure") ]
+  structure: template(1,"""
+    <div #ref=anchor></div>
+    """)
+  data: ->
+    test: ["1","2"]
+    template: template 1,"""<p :text=value></p>"""
+    template2: template 1,"""<p :text.expr=@value+@key+@index></p>"""
+}, (el) ->
+  it "should work", (done) ->
+    el.$for anchor:el.anchor, template:"template", names:["value"], value: "test"
+    el.should.have.text "12"
+    el.test = 1:2, 3:4
+    el.should.have.text "24"
+    el.template = -> []
+    el.should.have.text ""
+    el.$for anchor:el.anchor, template:"template2", names:["value","key","index"], value: "test"
+    el.$nextTick ->
+      el.should.have.text "210431"
+      done()

@@ -12,39 +12,33 @@ module.exports =
       if o?
         @$nextTick ->
           @$if 
-            value: o.value?[""]
+            value: o.true?[""] or o.false?[""]
             anchor: comment
             els: children
             template: o.template?[""]
             elseTemplate: o.else?[""]
-            not: o.not?[""]
+            not: o.not?[""] or o.false?[""]?
       return comment
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "c-if", ->
-      el = null
-      before (done) -> 
-        el = makeEl merge
-          mixins: [ require("./structure") ]
-          structure: template(1,"""
-            <c-if value=isVisible>
-              <p>test</p>
-            </c-if>
-            <c-if value=isVisible template=template else=elseTemplate>
-            </c-if>
-            <c-if value=isVisible>
-              <template><p>test3</p></template>
-            </c-if>
-            """)
-          data: ->
-            isVisible: false
-            template: template(1,"<p>test2</p>")
-            elseTemplate: template(1,"<p>else</p>")
-        setTimeout done, 50
-      after -> el.remove()
-      it "should work", ->
-        el.should.have.text "else"
-        el.isVisible = true
-        el.should.have.text "testtest2test3"
+test module.exports, {
+  mixins: [ require("./structure") ]
+  structure: template(1,"""
+    <c-if true=isVisible>
+      <p>test</p>
+    </c-if>
+    <c-if true=isVisible template=template else=elseTemplate>
+    </c-if>
+    <c-if true=isVisible>
+      <template><p>test3</p></template>
+    </c-if>
+    """)
+  data: ->
+    isVisible: false
+    template: template(1,"<p>test2</p>")
+    elseTemplate: template(1,"<p>else</p>")
+}, (el) ->
+  it "should work", ->
+    el.should.have.text "else"
+    el.isVisible = true
+    el.should.have.text "testtest2test3"

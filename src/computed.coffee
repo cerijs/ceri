@@ -175,38 +175,36 @@ test module.exports, (merge) ->
       someData2: spy
   }
   el = makeEl(obj)
-  describe "ceri", ->
-    describe "computed", ->
-      it "should compute", ->
-        el.someData2.should.equal "test"
-      it "should call spy on change", ->
-        spy.should.have.been.calledOnce
-        el.someData = "test2"
-        spy.should.have.been.calledWith "test2", "test"
-        spy2.should.have.been.calledWith "test2", "test"
-        el.someData2.should.equal "test2"
-      it "should work with computed dependecies", ->
-        el.someData = "test3"
-        el.someData2.should.equal "test3"
-        el.someData3.should.equal "test3"
-        el.someData = "test33"
-        el.someData3.should.equal "test33"
-      it "should work with combined dependecies", ->
-        el.someData = "test4"
-        el.someData4.should.equal "test4test4"
-      it "should work with cyclic dependecies", ->
-        el.someData6.should.equal 1
-        el.someData5.should.equal 1
-        el.someData6.should.equal 2
-      it "should work with branched dependecies", ->
-        el.someData = "test5"
-        el.someData8.should.equal "test5test5"
-        el.someData = "test6"
-        el.someData8.should.equal "test6test6"
-      it "should work with deep dependencies", ->
-        el.someData = "test7"
-        el.someData9.should.equal "test7"
-        el.someData = "test8"
-        el.someData9.should.equal "test8"
-        
-      after -> el.remove()
+  it "should compute", ->
+    el.someData2.should.equal "test"
+  it "should call spy on change", ->
+    spy.should.have.been.calledOnce
+    el.someData = "test2"
+    spy.should.have.been.calledWith "test2", "test"
+    spy2.should.have.been.calledWith "test2", "test"
+    el.someData2.should.equal "test2"
+  it "should work with computed dependecies", ->
+    el.someData = "test3"
+    el.someData2.should.equal "test3"
+    el.someData3.should.equal "test3"
+    el.someData = "test33"
+    el.someData3.should.equal "test33"
+  it "should work with combined dependecies", ->
+    el.someData = "test4"
+    el.someData4.should.equal "test4test4"
+  it "should work with cyclic dependecies", ->
+    el.someData6.should.equal 1
+    el.someData5.should.equal 1
+    el.someData6.should.equal 2
+  it "should work with branched dependecies", ->
+    el.someData = "test5"
+    el.someData8.should.equal "test5test5"
+    el.someData = "test6"
+    el.someData8.should.equal "test6test6"
+  it "should work with deep dependencies", ->
+    el.someData = "test7"
+    el.someData9.should.equal "test7"
+    el.someData = "test8"
+    el.someData9.should.equal "test8"
+    
+  after -> el.remove()

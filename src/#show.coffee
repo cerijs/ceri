@@ -19,26 +19,20 @@ module.exports =
             @$style.set o.el, style
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "#show", ->
-      el = null
-      before (done) -> 
-        el = makeEl merge
-          mixins: [ require("./structure") ]
-          structure: template(1,"""
-            <div #show="isVisible" #ref=d1 class=c1></div>
-            <div #show="isVisible2" #ref=d2 class=c2></div>
-            """)
-          data: ->
-            isVisible: true
-            isVisible2: false
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
-        el.d1.should.not.have.attr "style", "display: none;"
-        el.d2.should.have.attr "style", "display: none;"
-        el.isVisible = false
-        el.isVisible2 = true
-        el.d1.should.have.attr "style", "display: none;"
-        el.d2.should.not.have.attr "style", "display: none;"
+test module.exports, {
+  mixins: [ require("./structure") ]
+  structure: template(1,"""
+    <div #show="isVisible" #ref=d1 class=c1></div>
+    <div #show="isVisible2" #ref=d2 class=c2></div>
+    """)
+  data: ->
+    isVisible: true
+    isVisible2: false
+}, (el) ->
+  it "should work", ->
+    el.d1.should.not.have.attr "style", "display: none;"
+    el.d2.should.have.attr "style", "display: none;"
+    el.isVisible = false
+    el.isVisible2 = true
+    el.d1.should.have.attr "style", "display: none;"
+    el.d2.should.not.have.attr "style", "display: none;"

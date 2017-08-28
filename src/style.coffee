@@ -7,8 +7,8 @@ module.exports =
   _rebind: "$style"
   _prio: 700
   _mergers: [
-    require("./_merger").copy(source: "initStyle")
-    require("./_merger").copy(source: "computedStyle")
+    require("./_merger").concat(source: "initStyle")
+    require("./_merger").concat(source: "computedStyle")
   ]
   _attrLookup:
     style:
@@ -48,28 +48,22 @@ module.exports =
         @$style.setNormalized(el,@$style.normalizeObj(obj,el))
   connectedCallback: ->
     if @_isFirstConnect
-      if (ins = @initStyle)?
+      for ins in @initStyle
         unless isObject(ins[Object.keys(ins)[0]])
           ins = this: ins
         for el, s of ins
           @$style.set el, s
-      if (cs = @computedStyle)?
+      for cs in @computedStyle
         for el, c of cs
           @$computed.parseAndInit c, cbs: ((el, val) -> @$style.set(el, val)).bind(@,el)
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "style", ->
-      el = null
-      before ->
-        el = makeEl merge {}
-      after -> el.remove()
-      it "should normalize style prop", ->
-        el.$style.normalize("background-color").should.equal "backgroundColor"
-      it "should normalize style obj", ->
-        obj = el.$style.normalizeObj({"background-color":true,position:true})
-        obj.backgroundColor.should.be.true
-        obj.position.should.be.true
-      it "should set style obj on element", ->
-        el.$style.set({"background-color":"blue",position:"absolute"})
-        el.should.have.attr "style", "background-color: blue; position: absolute;"
+test module.exports, {}, (el) ->
+  it "should normalize style prop", ->
+    el.$style.normalize("background-color").should.equal "backgroundColor"
+  it "should normalize style obj", ->
+    obj = el.$style.normalizeObj({"background-color":true,position:true})
+    obj.backgroundColor.should.be.true
+    obj.position.should.be.true
+  it "should set style obj on element", ->
+    el.$style.set({"background-color":"blue",position:"absolute"})
+    el.should.have.attr "style", "background-color: blue; position: absolute;"

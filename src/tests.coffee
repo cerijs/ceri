@@ -8,6 +8,4 @@ module.exports =
         window.ceriTest obj
 
 test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "tests", ->
-      it "should work", ->
+  it "should work", ->

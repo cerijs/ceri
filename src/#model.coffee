@@ -21,20 +21,14 @@ module.exports =
             o.el.value = value
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "#model", ->
-      el = null
-      before (done) -> 
-        el = makeEl merge
-          mixins: [ require("./structure") ]
-          structure: template(1,"""
-            <input #model="value" #ref=input></input>
-            <select #model="value" #ref=select></select>
-            """)
-          data: -> 
-            value: "test"
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
-        el.input.value.should.equal el.value
+test module.exports, {
+  mixins: [ require("./structure") ]
+  structure: template(1,"""
+    <input #model="value" #ref=input></input>
+    <select #model="value" #ref=select></select>
+    """)
+  data: -> 
+    value: "test"
+}, (el) ->
+  it "should work", ->
+    el.input.value.should.equal el.value

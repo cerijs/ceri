@@ -48,24 +48,22 @@ module.exports =
     return merger
 
 test {_name:"_merger"}, ->
-  describe "ceri", ->
-    describe "_merger", ->
-      it "should copy", (done) ->
-        test = class Test
-        test.prototype = {}
-        module.exports.apply test, [{parent: {a:1,b:1}},{parent: {a:2,c:2}}],
-          module.exports.copy source:"parent", finisher: (obj) ->
-            o = new obj()
-            o.parent.a.should.equal 1
-            o.parent.b.should.equal 1
-            o.parent.c.should.equal 2
-            done()
-      it "should concat", (done) ->
-        test = class Test
-        test.prototype = {}
-        module.exports.apply test, [{parent: "test"},{parent: "test2"}],
-          module.exports.concat source:"parent", finisher: (obj) ->
-            o = new obj()
-            o.parent[0].should.equal "test"
-            o.parent[1].should.equal "test2"
-            done()
+  it "should copy", (done) ->
+    test = class Test
+    test.prototype = {}
+    module.exports.apply test, [{parent: {a:1,b:1}},{parent: {a:2,c:2}}],
+      module.exports.copy source:"parent", finisher: (obj) ->
+        o = new obj()
+        o.parent.a.should.equal 1
+        o.parent.b.should.equal 1
+        o.parent.c.should.equal 2
+        done()
+  it "should concat", (done) ->
+    test = class Test
+    test.prototype = {}
+    module.exports.apply test, [{parent: "test"},{parent: "test2"}],
+      module.exports.concat source:"parent", finisher: (obj) ->
+        o = new obj()
+        o.parent[0].should.equal "test"
+        o.parent[1].should.equal "test2"
+        done()

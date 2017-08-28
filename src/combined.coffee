@@ -62,27 +62,22 @@ module.exports =
 
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "combined", ->
-      el = null
-      before ->
-        el = makeEl merge 
-          data: -> someProp: parentProp: "parentProp1"
-          combinedTest: {}
-      after -> el.remove()
-      it "should work", (done) ->
-        el.combinedTest =
-          name:
-            data: -> parentData: "parentData1"
-            computed: -> parentComputed: "parentComputed1"
-            prop: "someProp"
-        el.$combined
-          path: "combinedTest"
-          value: el.combinedTest
-          cbFactory: -> [(val) ->
-            val.parentData.should.equal "parentData1"
-            val.parentComputed.should.equal "parentComputed1"
-            val.parentProp.should.equal "parentProp1"
-            done()
-            ]
+test module.exports, {
+  data: -> someProp: parentProp: "parentProp1"
+  combinedTest: {}
+}, (el) ->
+  it "should work", (done) ->
+    el.combinedTest =
+      name:
+        data: -> parentData: "parentData1"
+        computed: -> parentComputed: "parentComputed1"
+        prop: "someProp"
+    el.$combined
+      path: "combinedTest"
+      value: el.combinedTest
+      cbFactory: -> [(val) ->
+        val.parentData.should.equal "parentData1"
+        val.parentComputed.should.equal "parentComputed1"
+        val.parentProp.should.equal "parentProp1"
+        done()
+        ]

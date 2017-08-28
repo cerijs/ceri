@@ -34,6 +34,7 @@ module.exports =
     require "./computed"
     require "./parseElement"
     require "./parseActive"
+    require "./parseFunction"
   ]
   _evLookup: {}
   methods:
@@ -41,27 +42,7 @@ module.exports =
       o.once = true
       return @$on(o)
     $on: (o) ->
-      cbs = []
-      strToFn = (str) =>
-        if isString(str)
-          splitted = str.replace(")","").split("(")
-          if splitted.length > 1
-            fn = @$path.resolveValue(splitted.shift())
-            return (e) ->
-              tmp = splitted[0].split(",").map (path) =>
-                newPath = path.replace(/[\"']/g,"")
-                return newPath if newPath != path
-                return @$path.resolveValue(path)
-              tmp.push e
-              fn.apply(@,tmp)
-          else
-            return @$path.resolveValue(str)
-        else if isFunction(str)
-          return str
-        else
-          return null
-      _fns = {}
-      
+      o._cbs = cbs = []
       if o.toggle
         o.toggle = o.value unless isString(o.toggle)
         obj = @$path.toNameAndParent(path:o.toggle)
@@ -69,20 +50,10 @@ module.exports =
           obj.parent[obj.name] = !obj.parent[obj.name]
       else
         for str in arrayize(o.cbs)
-          if o.dyn and isString(str)
-            @$computed.orWatch str, (str2, oldStr) ->
-              if (oldFn = _fns[oldStr])? 
-                delete _fns[oldStr]
-                oldStr = oldFn
-              if ~(index = cbs.indexOf(oldStr))
-                cbs.splice index, 1
-              if (fn = strToFn(str2))?
-                cbs.push fn
-                if fn != str2
-                  _fns[str2] = fn
-          else
-            cbs.push fn if (fn = strToFn(str))?
-      o._cbs = cbs
+          @$parseFunction str, (fn, oldFn) -> 
+            if oldFn and ~(index = cbs.indexOf(oldFn))
+              cbs.splice index, 1
+            cbs.push fn if fn and isFunction(fn)
       o.cb = (el, e) ->
         return if o.self and e.target != el
         return if o.notPrevented and e.defaultPrevented
@@ -164,16 +135,14 @@ module.exports =
               @$on o
 
 test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "events", ->
-      el = null
-      spy = sinon.spy()
-      before (done) ->
-        el = makeEl merge 
-          events:
-            someEvent: (e) -> spy(e.detail)
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
-        el.$emit name: "someEvent", detail: "test"
-        spy.should.have.been.calledWith "test"
+  el = null
+  spy = sinon.spy()
+  before (done) ->
+    el = makeEl merge 
+      events:
+        someEvent: (e) -> spy(e.detail)
+    el.$nextTick done
+  after -> el.remove()
+  it "should work", ->
+    el.$emit name: "someEvent", detail: "test"
+    spy.should.have.been.calledWith "test"

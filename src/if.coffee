@@ -2,6 +2,9 @@
 module.exports =
   _name: "if"
   _v: 1
+  mixins: [
+    "parseFunction"
+  ]
   methods: 
     $if: (o) ->
       cerror(!o.value,"no value provided for $if") 
@@ -9,54 +12,68 @@ module.exports =
       elseTemplate = o.elseTemplate
       els = if template then null else o.els
       append = (els) ->
-        parent = o.anchor.parentElement
-        for el in els
-          if el.parentElement != parent
-            parent.insertBefore el, o.anchor
+        if els?
+          parent = o.parent || o.anchor.parentElement
+          for el in els
+            if el.parentElement != parent
+              parent.insertBefore el, o.anchor
       remove = (els) ->
-        for el in els
-          el.remove()
-      els2 = null
+        if els?
+          for el in els
+            el.remove()
+      els2 = if elseTemplate then null else o.else
       @$computed.orWatch o.value, (value, oldVal) ->
-        value = !value != !o.not
-        if value
+        truthy = !value != !o.not
+        if truthy
           if template?
-            els = @$path.resolveValue(template).call(@)
+            @$parseFunction template, (fn) ->
+              oldEls = els
+              if fn? and isFunction(fn)
+                els = fn.call(@)
+              else
+                els = []
+              if truthy == true
+                append(els)
+                remove(oldEls)
             template = null
-          append(els) if els
+          else
+            append(els) if els
           remove(els2) if els2
         else
           if elseTemplate?
-            els2 = @$path.resolveValue(elseTemplate).call(@)
+            @$parseFunction elseTemplate, (fn) ->
+              oldEls = els2
+              if fn? and isFunction(fn)
+                els2 = fn.call(@)
+              else
+                els2 = []
+              if truthy == false
+                append(els2)
+                remove(oldEls)
             elseTemplate = null
-          append(els2) if els2
+          else
+            append(els2) if els2
           remove(els) if els
 
 
-test module.exports, (merge) ->
-  describe "ceri", ->
-    describe "if", ->
-      el = null
-      before (done) -> 
-        el = makeEl merge
-          mixins: [ require("./structure") ]
-          structure: template(1,"""
-            <div #ref=anchor></div>
-            """)
-          data: ->
-            isVisible: false
-        el.$nextTick done
-      after -> el.remove()
-      it "should work", ->
-        el.$if anchor:el.anchor, els:[document.createElement("p")], value: "isVisible"
-        el.$if anchor:el.anchor, template: (-> [document.createElement("p")]), value: "isVisible"
-        el.should.not.contain "p"
-        el.isVisible = true
-        el.should.contain "p"
-        el.should.contain "p+p"
-        for ele in document.querySelectorAll("p")
-          ele.textContent = "test"
-        el.isVisible = false
-        el.should.not.contain "p"
-        el.isVisible = true
-        el.should.have.text "testtest"
+test module.exports, {
+  mixins: [ require("./structure") ]
+  structure: template(1,"""
+    <div #ref=anchor></div>
+    """)
+  data: ->
+    isVisible: false
+}, (el) ->
+  it "should work", ->
+    el.$if anchor:el.anchor, els:[document.createElement("p")], value: "isVisible"
+    el.$if anchor:el.anchor, template: (-> [document.createElement("p")]), value: "isVisible"
+    el.should.not.contain "p"
+    el.isVisible = true
+    el.should.contain "p"
+    el.should.contain "p+p"
+    for ele in document.querySelectorAll("p")
+      ele.textContent = "test"
+    el.isVisible = false
+    el.should.not.contain "p"
+    el.isVisible = true
+    el.should.have.text "testtest"

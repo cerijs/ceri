@@ -1,6 +1,9 @@
 module.exports =
   _name: "@tap"
   _v: 1
+  mixins: [
+    require "./events"
+  ]
   _evLookup: 
     tap: (o) ->
       o.timeout = 300
