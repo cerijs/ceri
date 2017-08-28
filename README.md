@@ -6,9 +6,9 @@ Then you have come to the right place.
 The aim of CeriJS is to make development and maintenance of custom elements v1 as easy as possible.
 
 ### Ecosystem
-[cerijs](https://github.com/cerijs/) - core and tooling
-[ceri-comps](https://github.com/ceri-comps) - simple components built with ceri
-[ceri-widgets](https://github.com/ceri-widgets) - complex components built with ceri and other ceri-components
+[cerijs](https://github.com/cerijs/) - core and tooling  
+[ceri-comps](https://github.com/ceri-comps) - simple components built with ceri  
+[ceri-widgets](https://github.com/ceri-widgets) - complex components built with ceri and other ceri-components  
 
 #### Features
 - incoperates many concepts of VueJS
