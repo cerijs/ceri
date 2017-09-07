@@ -1,4 +1,4 @@
-{isObject, isString, isArray, noop, clone} = require("./_helpers")
+{isObject, isString, isFunction, isArray, noop, clone} = require("./_helpers")
 clustersTmpl = template 1, """
   <div :class=_clusterClasses.firstRow #ref=firstRow :style.expr="'height:'+@_frHeight+'px'"></div>
   <div :class=_clusterClasses.lastRow #ref=lastRow :style.expr="'height:'+@_lrHeight+'px'"></div>
@@ -15,6 +15,7 @@ module.exports =
     require("./if")
     require("./structure")
     require("./detach")
+    require("./parseFunction")
     require("./@resize")
   ]
   methods: 
@@ -29,14 +30,35 @@ module.exports =
       m._clusterClasses = o.classes
 
       reattachContainer = @$detach(container = o.container)
+      settedUp = false
+      ready = false
+      init = =>
+        if settedUp and ready
+          init = null
+          @$on event: "scroll", el: container, cbs: processScroll, throttled: true
+          @$on event: "resize", el: container, delay: true, cbs: ->
+            updateClusterHeight()
+            updateClusterCount()
+            processScroll(true)
+        
+          getData(0,1)
+          .then(setData[0])
+          .then(updateRowHeight)
+          .then(updateRowCount)
+          .then(processScroll)
 
+          reattachContainer()
       for el in clustersTmpl.call(m)
         container.appendChild el
-
-      getData = @$path.resolveValue(o.getData)
-      getCount = @$path.resolveValue(o.getCount)
-
-      isInfinite = !getCount?
+      
+      getData = null
+      getCount = null
+      @$parseFunction o.getData, (fn) -> 
+        getData = fn
+        if init? and isFunction(fn)
+          ready = true
+          init()
+      @$parseFunction o.getCount, (fn) -> getCount = fn
 
       o.clusters = clusters = []
       setData = []
@@ -85,13 +107,13 @@ module.exports =
       clusterHeight = 0
       updateClusterHeight = ->
         if not (clusterSize = o.clusterSize)
-          clusterSize = Math.ceil(container.offsetHeight / rowHeight)
+          clusterSize = Math.ceil((container.offsetHeight or 1 )/ rowHeight)
           clusterSize++ if clusterSize % 2 # enforce even rowcount
         clusterHeight = clusterSize * rowHeight
 
       rowCount = 0
       updateRowCount = ->
-        unless isInfinite
+        if getCount?
           return getCount().then (count) ->
             rowCount = count
             updateClusterCount()
@@ -116,10 +138,10 @@ module.exports =
           for absNr in absNrs
             c = clusters[(absNr+3)%3]
             if c._clusternr != (c._clusternr = absNr) or redraw == true 
-              if absNr > -1 and (isInfinite or absNr < clustersCount)
+              if absNr > -1 and (!getCount? or absNr < clustersCount)
                 start = absNr*clusterSize
                 end = start+clusterSize
-                end = Math.min end, rowCount unless isInfinite
+                end = Math.min end, rowCount if getCount?
                 c._clusterHeight = (end-start)*rowHeight
                 getData(start, end)
                 .then ((c, loadingid, data) ->
@@ -134,23 +156,12 @@ module.exports =
             container.insertBefore c._clusterel, lr
           # setting new first row height
           m._frHeight = Math.max(0, (clusterVisible-1)*clusterHeight)
-          unless isInfinite
+          if getCount?
             # setting new last row height
             m._lrHeight = Math.max(0, totalHeight - (clusterVisible+2)*clusterHeight)
           container.scrollTop = top
-      @$on event: "scroll", el: container, cbs: processScroll, throttled: true
-      @$on event: "resize", el: container, delay: true, cbs: ->
-        updateClusterHeight()
-        updateClusterCount()
-        processScroll(true)
-
-      getData(0,1)
-      .then(setData[0])
-      .then(updateRowHeight)
-      .then(updateRowCount)
-      .then(processScroll)
-
-      reattachContainer()
+      settedUp = true
+      init?()
       return o
 
 test module.exports, {

@@ -1,8 +1,8 @@
-createSvgElement = (name) ->
+createSvgElement = (options, {name, children}) ->
   el = document.createElementNS("http://www.w3.org/2000/svg",name)
   if name == "svg"
     el.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink")
-  return el
+  return el: el, options: options, children: children
 
 svgTags = [
   "svg"

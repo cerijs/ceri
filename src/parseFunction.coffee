@@ -8,7 +8,11 @@ module.exports =
   ]
   methods:
     $parseFunction: (value, cb) ->
-      return cb.call(@, value) if isFunction(value)
+      if isFunction(value)
+        if isFunction(cb)
+          return cb.call(@, value)
+        else
+          return value
       if isString(value)
         splitted = value.replace(")","").split("(")
         path = splitted.shift()
@@ -25,12 +29,19 @@ module.exports =
                 else return @$path.resolveValue(path) # is variable name
             concat tmp, args if args?
             return fn.apply(@, tmp)
-        return @$computed.orWatch path, (fn, args...) ->
-          if hasArgs and fn? and isFunction(fn)
-            fn = getArgumentsProcessor.call(@, fn)
-          tmp = [fn]
-          concat(tmp, args) if args?
-          cb.apply @, tmp
+        if isFunction(cb)
+          return @$computed.orWatch path, (fn, args...) ->
+            if hasArgs and fn? and isFunction(fn)
+              fn = getArgumentsProcessor.call(@, fn)
+            tmp = [fn]
+            concat(tmp, args) if args?
+            cb.apply @, tmp
+        else
+          fn = @$path.resolveValue(path)
+          if isFunction(fn)
+            return getArgumentsProcessor.call(@, fn) if hasArgs 
+            return fn
+          return null
 
 
 test module.exports, {}, (el) ->

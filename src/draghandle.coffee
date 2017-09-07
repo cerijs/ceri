@@ -13,12 +13,14 @@ start = (o, name, name2, e) ->
   o._moveRemover = @$on getEvent(dEl, name + "move", true, isTouch, move.bind(@,o))
   @$once getEvent(dEl, name + name2, false, isTouch, end.bind(@,o))
 
-getDelta = (s,e) -> x: e.clientX - s.x, y: e.clientY - s.y
+getDelta = (s, e) -> 
+  x: e.clientX - s.x, y: e.clientY - s.y, start: s
+
 move = (o, e) ->
   e = e.changedTouches[0] if e.changedTouches?
   o.secondMove = o.firstMove
   o.onFirstMove?.call(@, o, e) if o.firstMove
-  o.onMove?.call(@, getDelta(o.start,e), o, e)
+  o.onMove?.call(@, getDelta(o.start,e) , o, e)
   o.firstMove = false
 end = (o, e) -> 
   o._moveRemover?()
@@ -26,6 +28,7 @@ end = (o, e) ->
   if o.firstMove
     o.onClick?.call(@,o)
   else
+
     o.onEnd?.call(@, getDelta(o.start,e), o)
     o.onClick?.call(@,o) if o.secondMove
 
@@ -42,7 +45,7 @@ module.exports =
 
   methods:
     $draghandle: (o) ->
-      o.handle = document.createElement "div"
+      o.handle ?= document.createElement "div"
       o.activate = ->
         _el = @$parseElement.byString(o.el)
         unless o.wasActivated

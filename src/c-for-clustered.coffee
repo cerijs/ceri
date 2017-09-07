@@ -1,4 +1,4 @@
-
+{isFunction} = require("./_helpers")
 module.exports =
   _name: "c-for-clustered"
   _v: 1
@@ -7,24 +7,17 @@ module.exports =
 
   ]
   _elLookup:
-    cClustered: (name, o, children) ->
-      container = document.createElement "div"
-      if isFunction(children)
-        template = children
-      else
-        template = o.template?[""]
-      @$nextTick ->
-        clusterContainer = @$clusteredFor
-          container: container
-          template: template
-          getCount: o.getCount?[""]
-          getData: o.getData?[""]
-          names: o.names?[""]?.split(",")
-          computed: o.computed?[""]
-          id: o.id?[""]
-        if (tap = o.tap?[""])?
-          @$path.setValue(path:tap, value: clusterContainer)
-      return container
+    cForClustered:
+      extract:
+        "": ["tag","names","template","get-count","get-data","computed","id","tap"] 
+      cb: (o, {children}) ->
+        c = o.container = document.createElement(o.tag or "div")
+        o.template = children if isFunction(children)
+        o.names = o.names?.split(",")
+        @$nextTick ->
+          clusterContainer = @$clusteredFor o
+          @$path.setValue(path:o.tap, value: clusterContainer) if o.tap?
+        return c
 
 test module.exports, {}, (merge) ->
   it "should work", ->

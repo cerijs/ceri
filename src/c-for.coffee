@@ -7,23 +7,26 @@ module.exports =
     require "./for"
   ]
   _elLookup:
-    cFor: (name, o, children) ->
-      comment = document.createComment("c-for")
-      if isFunction(children)
-        template = children
-      else
-        template = o.template?[""]
-      @$nextTick ->
-        {scopes} = @$for
-          anchor: comment
-          template: template
-          value: o.iterate?[""]
-          names: o.names?[""]?.split(",")
-          computed: o.computed?[""]
-          id: o.id?[""]
-        if (tap = o.tap?[""])?
-          @$path.setValue(path:tap, value: scopes)
-      return comment
+    cFor: 
+      extract: 
+        "": ["template","iterate","names","computed","id","tap"]
+      cb: (o, {children}) ->
+        comment = document.createComment("c-for")
+        if isFunction(children)
+          template = children
+        else
+          template = o.template
+        @$nextTick ->
+          {scopes} = @$for
+            anchor: comment
+            template: template
+            value: o.iterate
+            names: o.names?.split(",")
+            computed: o.computed
+            id: o.id
+          if (tap = o.tap)?
+            @$path.setValue(path:tap, value: scopes)
+        return el: comment, options: null
 
 test module.exports, {
   mixins: [ require("./structure") ]

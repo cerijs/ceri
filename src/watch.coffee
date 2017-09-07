@@ -1,4 +1,4 @@
-{arrayize, isString, isArray, isObject,clone, getID, concat} = require("./_helpers")
+{arrayize, isString, isArray, isObject, isPlainObject, clone, getID, concat, assign} = require("./_helpers")
 merger = require("./_merger")
 watchStr = "__watch__"
 instancesStr = "__instances__"
@@ -14,13 +14,18 @@ module.exports =
   _rebind: "$watch"
   mixins: [
     require "./path"
+    require "./parseFunction"
   ]
   methods:
     $watch:
       __w: {}
 
       getObj: (o) ->
-        if o.path? and (obj = @$watch.__w[o.path] or @__parent?.$watch.__w[o.path])?
+        if o.path? 
+          if not (obj = @$watch.__w[o.path]) and (p = @__parents)?
+            i = p.length
+            while not obj and i
+              obj = p[--i].$watch.__w[o.path]
           return obj
         return null
 
@@ -36,12 +41,7 @@ module.exports =
             return  
         o.notify(o.value)
       
-      parseCbs: (o, prop) ->
-        o[prop] = arrayize(o[prop]).map (cb) =>
-          if isString(cb)
-            cwarn !@[cb],"method ", cb, " not found"
-            return @[cb]
-          return cb
+      parseCbs: (o, prop) -> o[prop] = arrayize(o[prop]).map @$parseFunction.bind(@)
 
       parse: (obj,shouldClone) ->
         unless isObject(obj)
@@ -210,6 +210,8 @@ module.exports =
     for fn in @data
       obj = fn.call(@)
       for k,v of obj
+        if (v2 = @[k])? and isPlainObject(v) and isPlainObject(v2)
+          v = assign v2,v
         @$watch.path(parent:@, name: k, value: v, path: k)
 
 

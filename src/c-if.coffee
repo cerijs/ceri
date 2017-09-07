@@ -7,18 +7,21 @@ module.exports =
     require "./if"
   ]
   _elLookup:
-    cIf: (name, o, children) ->
-      comment = document.createComment("c-if")
-      if o?
-        @$nextTick ->
-          @$if 
-            value: o.true?[""] or o.false?[""]
-            anchor: comment
-            els: children
-            template: o.template?[""]
-            elseTemplate: o.else?[""]
-            not: o.not?[""] or o.false?[""]?
-      return comment
+    cIf: 
+      extract: 
+        "": ["true","false","template","else","not"]
+      cb: (o, {children}) ->
+        comment = document.createComment("c-if")
+        if o?
+          @$nextTick ->
+            @$if 
+              value: o.true or o.false
+              anchor: comment
+              els: children
+              template: o.template
+              elseTemplate: o.else
+              not: o.not or o.false
+        return el: comment, options: null
 
 
 test module.exports, {

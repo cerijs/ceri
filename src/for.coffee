@@ -11,6 +11,7 @@ module.exports =
       #cerror !names or !isArray(names), "$for called without array of names"
       #cerror !value, "$for called without iteratable"
       tmpl = null
+      (_id = @$path.resolveValue(id))? or id
       templateWatcher = @$parseFunction template, (fn) ->
         tmpl = fn
         if objs
@@ -51,9 +52,10 @@ module.exports =
             unless tmp._appended
               tmp._appended = true 
               els = tmp._els
-              end = tmp._end
-              for el in els
-                parent.insertBefore(el, end)
+              if els?
+                end = tmp._end
+                for el in els
+                  parent.insertBefore(el, end)
           remove = (tmp) ->
             if tmp._appended
               tmp._appended = false
@@ -70,9 +72,9 @@ module.exports =
             keyname = names[2] if names[2]
             for val, i in value by -1
               #val = clone(val)
-              if id?
+              if _id
                 for obj, j in objs
-                  if obj? and val[id] == obj[valname][id]
+                  if obj? and val[_id] == obj[valname][_id]
                     unless i == j
                       objs[j] = objs[i]
                       tmp = objs[i] = obj
@@ -109,9 +111,9 @@ module.exports =
             keys = Object.keys(value)
             for key,i in keys by -1
               val = value[key]
-              if id?
+              if _id
                 for obj, j in objs
-                  if i > j and obj? and val[id] == obj[valname][id]
+                  if i > j and obj? and val[_id] == obj[valname][_id]
                     objs[j] = objs[i]
                     tmp = objs[i] = obj
                     break

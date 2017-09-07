@@ -20,8 +20,8 @@ module.exports =
           o.path = "__computed."+o.id
           o.parent = @__computed
           o.name = o.id
-        o.parent ?= @
-        o.name ?= o.path
+        else
+          @$path.toNameAndParent(o)
         @$watch.parse(o)
         o = @$watch.init(o) 
         unless o.__init__ # needs setup
@@ -63,7 +63,7 @@ module.exports =
           o.taint = ->
             o.dirty = true
             return ->
-              if o.cbs.length > 0
+              if o.cbs.length > 0 or o.lazy == false
                 instance = o.instance
                 oldVal = o.value
                 newVal = o.parent[o.name]
@@ -107,7 +107,7 @@ module.exports =
               set: o.setter
             
             # next tick, so all computed values are setup
-            if o.cbs.length > 0
+            if o.cbs.length > 0 or o.lazy == false
               @$nextTick o.notify
             else 
               o.dirty = true

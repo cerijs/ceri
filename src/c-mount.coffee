@@ -6,14 +6,17 @@ module.exports =
     require("./mount")
   ]
   _elLookup:
-    "cMount": (name, options, children) ->
-      comment = document.createComment("c-mount")
-      @$nextTick ->
-        @$mount
-          anchor: comment
-          els: children
-          template: options?.template?[""]
-      return comment
+    "cMount":
+      extract: 
+        "": ["template"]
+      cb: (options, {children}) ->
+        comment = document.createComment("c-mount")
+        @$nextTick ->
+          @$mount
+            anchor: comment
+            els: children
+            template: options.template
+        return el: comment, options: null
 
 
 

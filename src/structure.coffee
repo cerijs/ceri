@@ -1,4 +1,15 @@
 {isElement,isString,isFunction,arrayize,camelize} = require("./_helpers")
+extract = (options, extr) ->
+  return [null, options] unless extr
+  opts = {}
+  for type, names of extr
+    t = if type == "@" then "on-" else type
+    for name in names
+      if (val = options[name]?[type])?
+        delete options[name][type]
+        delete options[name] if Object.keys(options[name]).length == 0
+        opts[camelize(t+name)] = val
+  return [options, opts]
 module.exports =
   _name: "structure"
   _v: 1
@@ -16,11 +27,17 @@ module.exports =
       beforeInsert: []
       afterInsert: []
     el: (name, options, children) ->
-      if (cb = @_elLookup?[camelize(name)])?
-        el = cb.call(@, name, options, children)
+      if (o = @_elLookup?[camelize(name)])?
+        o = cb: o unless o.cb?
+        [options, opts] = extract(options, o.extract)
+        el = o.cb.call(@, opts, children: children, name: name)
+        if el.el?
+          options ?= el.options
+          children = el.children
+          el = el.el
       else
         el = document.createElement(name)
-      if options? and (not cb? or cb.length < 2)
+      if options?
         for name, types of options
           for type, value of types
             if value.mods?
@@ -32,7 +49,7 @@ module.exports =
             o.type = type
             o.name = if o.camel then camelize(name) else name
             @$directive o
-      if children? and not isFunction(children) and (not cb? or cb.length < 3)
+      if children? and not isFunction(children)
         for child in children
           if isString(child)
             @_slots[child] = el
